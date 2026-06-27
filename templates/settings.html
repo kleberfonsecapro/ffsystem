@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+
+{% block title %}Configurações - SmartFinance AI{% endblock %}
+
+{% block content %}
+<div class="topbar">
+    <h1 class="page-title">Configurações</h1>
+</div>
+
+{% if messages %}
+<div style="margin-bottom: 1rem;">
+    {% for message in messages %}
+    <div style="padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 0.5rem; {% if message.tags == 'success' %}background: rgba(16,185,129,0.1); color: var(--accent-green);{% else %}background: rgba(239,68,68,0.1); color: var(--accent-red);{% endif %}">
+        {{ message }}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="card" style="max-width: 500px;">
+    <h3 class="metric-title" style="margin-bottom: 1.5rem;">Alterar Senha</h3>
+    <form method="post">
+        {% csrf_token %}
+        <p>
+            <label for="{{ form.old_password.id_for_label }}">Senha atual</label>
+            {{ form.old_password }}
+        </p>
+        <p>
+            <label for="{{ form.new_password1.id_for_label }}">Nova senha</label>
+            {{ form.new_password1 }}
+            {% if form.new_password1.help_text %}
+            <small style="color: #888; display: block; margin-top: 0.25rem;">{{ form.new_password1.help_text }}</small>
+            {% endif %}
+        </p>
+        <p>
+            <label for="{{ form.new_password2.id_for_label }}">Confirmar nova senha</label>
+            {{ form.new_password2 }}
+        </p>
+        {% if form.non_field_errors %}
+        <div style="color: var(--accent-red); margin-bottom: 1rem;">{{ form.non_field_errors }}</div>
+        {% endif %}
+        <button type="submit" class="btn-primary" style="margin-top: 0.5rem;">
+            <i class="fa-solid fa-save"></i> Salvar
+        </button>
+    </form>
+</div>
+
+<style>
+    .card form p {
+        margin-bottom: 1rem;
+    }
+    .card form label {
+        display: block;
+        margin-bottom: 0.35rem;
+        font-size: 0.875rem;
+        color: #ccc;
+    }
+    .card form input {
+        width: 100%;
+        padding: 0.6rem 0.8rem;
+        border-radius: 6px;
+        border: 1px solid #3a3a45;
+        background: #1e1e28;
+        color: #fff;
+        font-size: 0.9rem;
+        box-sizing: border-box;
+    }
+    .card form input:focus {
+        outline: none;
+        border-color: var(--accent-green);
+    }
+</style>
+{% endblock %}
