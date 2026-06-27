@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block title %}Cadastro - Financial AI Platform{% endblock %}
+
+{% block login_content %}
+<div class="login-container">
+    <div class="glass-panel login-card">
+        <h1>Criar Conta</h1>
+        <p>Junte-se à plataforma inteligente</p>
+
+        {% if form.errors %}
+            <div style="color: #ec4899; margin-bottom: 1rem; font-size: 0.9rem; text-align: left;">
+                {% for field in form %}
+                    {% for error in field.errors %}
+                        <p>- {{ error }}</p>
+                    {% endfor %}
+                {% endfor %}
+                {% for error in form.non_field_errors %}
+                    <p>- {{ error }}</p>
+                {% endfor %}
+            </div>
+        {% endif %}
+
+        <form method="POST" action="{% url 'users:register' %}">
+            {% csrf_token %}
+            
+            {% for field in form %}
+            <div class="form-group" style="text-align: left;">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+            </div>
+            {% endfor %}
+
+            <button type="submit" class="btn-primary">Cadastrar</button>
+        </form>
+        
+        <div style="margin-top: 1.5rem; font-size: 0.9rem;">
+            <span style="color: var(--text-secondary);">Já possui uma conta?</span>
+            <a href="{% url 'users:login' %}" style="color: var(--accent-1); text-decoration: none; font-weight: 600;">Faça o login</a>
+        </div>
+    </div>
+</div>
+
+<style>
+/* Estilos para os campos gerados pelo Django form */
+.login-card input {
+    width: 100%;
+    padding: 0.8rem 1rem;
+    background: rgba(0, 0, 0, 0.2);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    color: var(--text-primary);
+    font-size: 1rem;
+    transition: all 0.3s ease;
+    margin-bottom: 0.5rem;
+}
+.login-card input:focus {
+    outline: none;
+    border-color: var(--accent-1);
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+.login-card ul {
+    list-style: none;
+    padding-left: 0;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    margin-bottom: 0.5rem;
+}
+</style>
+{% endblock %}

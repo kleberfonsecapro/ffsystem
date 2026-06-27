@@ -1,0 +1,72 @@
+{% extends 'base.html' %}
+
+{% block title %}Assistente IA - SmartFinance AI{% endblock %}
+
+{% block content %}
+<div class="topbar">
+    <h1 class="page-title"><i class="fa-solid fa-robot" style="color: var(--accent-blue);"></i> Assistente Financeiro IA</h1>
+</div>
+
+<div class="card chat-container">
+    <div class="chat-messages" id="chat-messages">
+        <div class="message msg-ai">
+            <strong>Agente Financeiro IA</strong><br>
+            Olá! Eu sou o seu Assistente Financeiro IA. Como posso ajudar com suas finanças hoje?
+        </div>
+    </div>
+    <div class="chat-input-area">
+        <input type="text" id="chat-input" class="chat-input" placeholder="Pergunte sobre seus gastos, peça dicas de economia...">
+        <button onclick="sendMessage()" class="btn-primary">
+            <i class="fa-solid fa-paper-plane"></i> Enviar
+        </button>
+    </div>
+</div>
+
+<script>
+function sendMessage() {
+    const input = document.getElementById('chat-input');
+    const msg = input.value.trim();
+    if (!msg) return;
+
+    const chatBox = document.getElementById('chat-messages');
+    
+    // Append user message
+    chatBox.innerHTML += `
+        <div class="message msg-user">
+            <strong>Você</strong><br>
+            ${msg}
+        </div>
+    `;
+    input.value = '';
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    // Send to API
+    const formData = new FormData();
+    formData.append('message', msg);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+    fetch("{% url 'intelligence:chat_api' %}", {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        chatBox.innerHTML += `
+            <div class="message msg-ai">
+                <strong>Agente Financeiro IA</strong><br>
+                ${data.reply}
+            </div>
+        `;
+        chatBox.scrollTop = chatBox.scrollHeight;
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+// Allow Enter key to send
+document.getElementById('chat-input').addEventListener('keypress', function (e) {
+    if (e.key === 'Enter') {
+        sendMessage();
+    }
+});
+</script>
+{% endblock %}

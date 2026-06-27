@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+
+{% block title %}Dashboard - SmartFinance AI{% endblock %}
+
+{% block content %}
+<div class="topbar">
+    <h1 class="page-title">Bem-vindo, {{ request.user.username|title }}</h1>
+    <a href="{% url 'finance:add' %}" class="btn-primary">
+        <i class="fa-solid fa-plus"></i> Nova Transação
+    </a>
+</div>
+
+<div class="grid-metrics">
+    <div class="card metric-card">
+        <span class="metric-title">Saldo Atual</span>
+        <span class="metric-value">R$ {{ current_balance|floatformat:2 }}</span>
+    </div>
+    <div class="card metric-card">
+        <span class="metric-title">Receitas</span>
+        <span class="metric-value text-green">R$ {{ total_income|floatformat:2 }}</span>
+    </div>
+    <div class="card metric-card">
+        <span class="metric-title">Despesas</span>
+        <span class="metric-value text-red">R$ {{ total_expense|floatformat:2 }}</span>
+    </div>
+    <div class="card metric-card" style="border-color: var(--accent-blue);">
+        <span class="metric-title" style="color: var(--accent-blue);"><i class="fa-solid fa-wand-magic-sparkles"></i> Insight da IA</span>
+        <span class="metric-value" style="font-size: 1rem; font-weight: 500; margin-top: 0.5rem; line-height: 1.4;" id="ai-insight">Analisando suas finanças...</span>
+    </div>
+</div>
+
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+    <div class="card">
+        <h3 class="metric-title" style="margin-bottom: 1rem;">Fluxo de Caixa</h3>
+        <canvas id="cashflowChart" height="100"></canvas>
+    </div>
+    <div class="card">
+        <h3 class="metric-title" style="margin-bottom: 1rem;">Distribuição</h3>
+        <canvas id="donutChart" height="200"></canvas>
+    </div>
+</div>
+
+<script>
+    const ctxFlow = document.getElementById('cashflowChart').getContext('2d');
+    new Chart(ctxFlow, {
+        type: 'line',
+        data: {
+            labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai'],
+            datasets: [{
+                label: 'Saldo',
+                data: [0, 0, 0, 0, {{ current_balance|stringformat:"f" }}],
+                borderColor: '#10b981',
+                tension: 0.4,
+                fill: true,
+                backgroundColor: 'rgba(16, 185, 129, 0.1)'
+            }]
+        },
+        options: {
+            plugins: { legend: { display: false } },
+            scales: { y: { beginAtZero: true, grid: { color: '#2a2a35' } }, x: { grid: { color: '#2a2a35' } } }
+        }
+    });
+
+    const ctxDonut = document.getElementById('donutChart').getContext('2d');
+    new Chart(ctxDonut, {
+        type: 'doughnut',
+        data: {
+            labels: ['Receitas', 'Despesas'],
+            datasets: [{
+                data: [{{ total_income|stringformat:"f" }}, {{ total_expense|stringformat:"f" }}],
+                backgroundColor: ['#10b981', '#ef4444'],
+                borderWidth: 0
+            }]
+        },
+        options: { cutout: '75%', plugins: { legend: { position: 'bottom', labels: { color: '#fff' } } } }
+    });
+
+    // Fetch AI Insight
+    fetch("{% url 'dashboard:insight' %}")
+        .then(res => res.json())
+        .then(data => {
+            document.getElementById('ai-insight').innerText = data.insight;
+        })
+        .catch(err => {
+            document.getElementById('ai-insight').innerText = "Insight indisponível.";
+        });
+</script>
+{% endblock %}

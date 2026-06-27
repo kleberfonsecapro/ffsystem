@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}SmartFinance AI{% endblock %}</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    {% if request.user.is_authenticated %}
+    <div class="app-layout">
+        <aside class="sidebar">
+            <div class="brand">
+                <i class="fa-solid fa-chart-pie"></i> SmartFinance AI
+            </div>
+            <ul class="nav-links">
+                <li><a href="{% url 'dashboard:home' %}" class="{% if request.resolver_match.app_name == 'dashboard' %}active{% endif %}">
+                    <i class="fa-solid fa-house"></i> Dashboard
+                </a></li>
+                <li><a href="{% url 'finance:list' %}" class="{% if request.resolver_match.app_name == 'finance' %}active{% endif %}">
+                    <i class="fa-solid fa-wallet"></i> Gestão Financeira
+                </a></li>
+                <li><a href="{% url 'intelligence:chat' %}" class="{% if request.resolver_match.app_name == 'intelligence' %}active{% endif %}">
+                    <i class="fa-solid fa-robot"></i> Assistente IA
+                </a></li>
+                <li><a href="#">
+                    <i class="fa-solid fa-gear"></i> Configurações
+                </a></li>
+                <li style="margin-top: auto;"><a href="{% url 'users:logout' %}">
+                    <i class="fa-solid fa-right-from-bracket"></i> Sair
+                </a></li>
+            </ul>
+        </aside>
+
+        <main class="main-content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+    {% else %}
+        {% block login_content %}{% endblock %}
+    {% endif %}
+</body>
+</html>

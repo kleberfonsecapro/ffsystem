@@ -1,0 +1,122 @@
+{% extends 'base.html' %}
+
+{% block title %}Gestão Financeira - SmartFinance AI{% endblock %}
+
+{% block content %}
+<div class="topbar">
+    <h1 class="page-title">Gestão Financeira: {{ request.user.username|title }}</h1>
+    <a href="{% url 'finance:add' %}" class="btn-primary">
+        <i class="fa-solid fa-plus"></i> Nova Transação
+    </a>
+</div>
+
+<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; align-items: start; margin-bottom: 2rem;">
+    <!-- Coluna da Esquerda: Tabela -->
+    <div class="card" style="overflow-x: auto;">
+        <h3 style="margin-bottom: 1.5rem; color: var(--text-secondary); font-size: 0.9rem;">CONTAS DA FAMÍLIA</h3>
+        <h3 style="margin-bottom: 1rem;">Últimas Transações da Família</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Data</th>
+                    <th>Descrição</th>
+                    <th>Categoria</th>
+                    <th>Tipo</th>
+                    <th>Valor</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for tx in transactions %}
+                <tr>
+                    <td>{{ tx.date|date:"d M Y" }}</td>
+                    <td style="font-weight: 500;">{{ tx.description }}</td>
+                    <td>{{ tx.category }}</td>
+                    <td>
+                        {% if tx.type == 'receita' %}
+                            <span class="badge badge-income">Receita</span>
+                        {% else %}
+                            <span class="badge badge-expense">Despesa</span>
+                        {% endif %}
+                    </td>
+                    <td class="{% if tx.type == 'receita' %}text-green{% else %}text-red{% endif %}" style="font-weight: 600;">
+                        R$ {{ tx.amount|floatformat:2 }}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="5" style="text-align: center; color: var(--text-secondary);">Nenhuma transação registrada ainda.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Coluna da Direita: Chat IA -->
+    <div class="card chat-container" style="height: 600px;">
+        <div style="margin-bottom: 1rem; border-bottom: 1px solid var(--border-color); padding-bottom: 1rem;">
+            <h3 style="font-size: 1.1rem; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fa-solid fa-robot" style="color: var(--accent-blue);"></i> Agente Financeiro IA
+            </h3>
+        </div>
+        <div class="chat-messages" id="chat-messages" style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 1rem; padding-right: 0.5rem;">
+            <div class="message msg-ai">
+                <strong>Agente IA</strong><br>
+                Olá! Sou o seu Assistente Financeiro. Quer que eu registre alguma despesa ou receita para você?
+            </div>
+        </div>
+        <div class="chat-input-area" style="padding-top: 1rem; display: flex; gap: 0.5rem;">
+            <input type="text" id="chat-input" class="chat-input" style="flex: 1;" placeholder="Ex: Gastei 50 no ifood">
+            <button onclick="sendMessage()" class="btn-primary" style="padding: 0.6rem;">
+                <i class="fa-solid fa-paper-plane"></i>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+function sendMessage() {
+    const input = document.getElementById('chat-input');
+    const msg = input.value.trim();
+    if (!msg) return;
+
+    const chatBox = document.getElementById('chat-messages');
+    chatBox.innerHTML += `
+        <div class="message msg-user">
+            <strong>Você</strong><br>${msg}
+        </div>
+    `;
+    input.value = '';
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    const formData = new FormData();
+    formData.append('message', msg);
+    formData.append('csrfmiddlewaretoken', '{{ csrf_token }}');
+
+    fetch("{% url 'intelligence:chat_api' %}", {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        chatBox.innerHTML += `
+            <div class="message msg-ai">
+                <strong>Agente IA</strong><br>${data.reply}
+            </div>
+        `;
+        chatBox.scrollTop = chatBox.scrollHeight;
+        
+        // Se registrou transação, recarrega a página para atualizar a tabela
+        if(data.reply.includes('Lançamento feito') || data.reply.includes('Registrei')) {
+            setTimeout(() => { window.location.reload(); }, 2000);
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+document.getElementById('chat-input').addEventListener('keypress', function (e) {
+    if (e.key === 'Enter') {
+        sendMessage();
+    }
+});
+</script>
+{% endblock %}
