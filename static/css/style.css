@@ -65,7 +65,7 @@ body {
     gap: 0.5rem;
 }
 
-.nav-links a {
+.nav-links a, .logout-btn {
     text-decoration: none;
     color: var(--text-secondary);
     font-weight: 500;
@@ -75,6 +75,20 @@ body {
     padding: 0.75rem 1rem;
     border-radius: 8px;
     transition: all 0.2s;
+}
+
+.logout-btn {
+    background: none;
+    border: none;
+    width: 100%;
+    cursor: pointer;
+    font-size: inherit;
+    font-family: inherit;
+}
+
+.logout-btn:hover {
+    background-color: rgba(255, 255, 255, 0.05);
+    color: var(--text-primary);
 }
 
 .nav-links a:hover, .nav-links a.active {
@@ -170,6 +184,42 @@ body {
     margin-bottom: 0.4rem;
     color: var(--text-secondary);
     font-size: 0.875rem;
+}
+
+form p {
+    margin-bottom: 1rem;
+}
+
+form p label {
+    display: block;
+    margin-bottom: 0.4rem;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+form p input,
+form p select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background-color: var(--bg-main);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 0.95rem;
+    box-sizing: border-box;
+}
+
+form p input:focus,
+form p select:focus {
+    outline: none;
+    border-color: var(--accent-blue);
+}
+
+.errorlist {
+    color: var(--accent-red);
+    list-style: none;
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
 }
 
 .form-control {

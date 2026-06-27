@@ -4,9 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}SmartFinance AI{% endblock %}</title>
-    <link rel="stylesheet" href="/static/css/style.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js" integrity="sha384-s8nEoFfMq7lIeYzIh3v4HnDNBPY+FX8nLhPO1V0JQa1M3H6p8N2N5f5i6aP9UN" crossorigin="anonymous"></script>
 </head>
 <body>
     {% if request.user.is_authenticated %}
@@ -28,9 +29,14 @@
                 <li><a href="#">
                     <i class="fa-solid fa-gear"></i> Configurações
                 </a></li>
-                <li style="margin-top: auto;"><a href="{% url 'users:logout' %}">
-                    <i class="fa-solid fa-right-from-bracket"></i> Sair
-                </a></li>
+                <li style="margin-top: auto;">
+                    <form method="POST" action="{% url 'users:logout' %}" style="display: inline;">
+                        {% csrf_token %}
+                        <button type="submit" class="logout-btn">
+                            <i class="fa-solid fa-right-from-bracket"></i> Sair
+                        </button>
+                    </form>
+                </li>
             </ul>
         </aside>
 

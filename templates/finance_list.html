@@ -26,7 +26,7 @@
                 </tr>
             </thead>
             <tbody>
-                {% for tx in transactions %}
+                {% for tx in page_obj %}
                 <tr>
                     <td>{{ tx.date|date:"d M Y" }}</td>
                     <td style="font-weight: 500;">{{ tx.description }}</td>
@@ -49,6 +49,19 @@
                 {% endfor %}
             </tbody>
         </table>
+        {% if page_obj.has_other_pages %}
+        <div style="display: flex; justify-content: center; gap: 0.5rem; margin-top: 1rem;">
+            {% if page_obj.has_previous %}
+                <a href="?page={{ page_obj.previous_page_number }}" class="btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">Anterior</a>
+            {% endif %}
+            <span style="display: flex; align-items: center; color: var(--text-secondary); font-size: 0.85rem;">
+                Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
+            </span>
+            {% if page_obj.has_next %}
+                <a href="?page={{ page_obj.next_page_number }}" class="btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">Próximo</a>
+            {% endif %}
+        </div>
+        {% endif %}
     </div>
 
     <!-- Coluna da Direita: Chat IA -->
@@ -74,19 +87,32 @@
 </div>
 
 <script>
+function escapeHtml(text) {
+    const div = document.createElement('div');
+    div.appendChild(document.createTextNode(text));
+    return div.innerHTML;
+}
+
+function addMessage(className, sender, text) {
+    const chatBox = document.getElementById('chat-messages');
+    const div = document.createElement('div');
+    div.className = 'message ' + className;
+    const strong = document.createElement('strong');
+    strong.textContent = sender;
+    div.appendChild(strong);
+    div.appendChild(document.createElement('br'));
+    div.appendChild(document.createTextNode(text));
+    chatBox.appendChild(div);
+    chatBox.scrollTop = chatBox.scrollHeight;
+}
+
 function sendMessage() {
     const input = document.getElementById('chat-input');
     const msg = input.value.trim();
     if (!msg) return;
 
-    const chatBox = document.getElementById('chat-messages');
-    chatBox.innerHTML += `
-        <div class="message msg-user">
-            <strong>Você</strong><br>${msg}
-        </div>
-    `;
+    addMessage('msg-user', 'Você', msg);
     input.value = '';
-    chatBox.scrollTop = chatBox.scrollHeight;
 
     const formData = new FormData();
     formData.append('message', msg);
@@ -98,15 +124,8 @@ function sendMessage() {
     })
     .then(response => response.json())
     .then(data => {
-        chatBox.innerHTML += `
-            <div class="message msg-ai">
-                <strong>Agente IA</strong><br>${data.reply}
-            </div>
-        `;
-        chatBox.scrollTop = chatBox.scrollHeight;
-        
-        // Se registrou transação, recarrega a página para atualizar a tabela
-        if(data.reply.includes('Lançamento feito') || data.reply.includes('Registrei')) {
+        addMessage('msg-ai', 'Agente IA', data.reply || '');
+        if(data.reply && (data.reply.includes('Registrei'))) {
             setTimeout(() => { window.location.reload(); }, 2000);
         }
     })

@@ -27,8 +27,8 @@ def insight_api(request):
     if not transactions.exists():
         return JsonResponse({"insight": "Registre algumas transações para análise."})
 
-    total_income = sum(t.amount for t in transactions if t.type == "receita")
-    total_expense = sum(t.amount for t in transactions if t.type == "despesa")
+    total_income = transactions.filter(type="receita").aggregate(Sum("amount"))["amount__sum"] or 0
+    total_expense = transactions.filter(type="despesa").aggregate(Sum("amount"))["amount__sum"] or 0
 
     if total_expense > total_income:
         insight = "Atenção: Suas despesas > receitas!"

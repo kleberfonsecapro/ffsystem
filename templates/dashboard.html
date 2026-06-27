@@ -3,6 +3,15 @@
 {% block title %}Dashboard - SmartFinance AI{% endblock %}
 
 {% block content %}
+{% if messages %}
+<div style="margin-bottom: 1rem;">
+    {% for message in messages %}
+    <div style="padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 0.5rem; {% if message.tags == 'success' %}background: rgba(16,185,129,0.1); color: var(--accent-green);{% else %}background: rgba(239,68,68,0.1); color: var(--accent-red);{% endif %}">
+        {{ message }}
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
 <div class="topbar">
     <h1 class="page-title">Bem-vindo, {{ request.user.username|title }}</h1>
     <a href="{% url 'finance:add' %}" class="btn-primary">

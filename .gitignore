@@ -1,2 +1,10 @@
 .env
-.env
+*.sqlite3
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+staticfiles/
+*.egg-info/
+.venv/
+venv/
