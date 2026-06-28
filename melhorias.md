@@ -28,22 +28,24 @@
 
 ---
 
-### 8. Exclusão em Massa por Tipo
+### 8. Correção de layout e rotas CSV na Gestão Financeira
 
 **Data:** Junho 2026
 
-**Descrição:** Adicionada regra que permite apagar todas as transações de um tipo (`receita` ou `despesa`) de uma vez.
+**Descrição:** Corrigido o layout quebrado da página de `Gestão Financeira` e adicionadas as rotas `export_csv` e `import_csv` usadas pelo template.
 
 **Arquivos alterados:**
-- `finance/views.py` — nova view `finance_delete_by_type` que apaga todas as transações do usuário por tipo com validação de tipo.
-- `finance/urls.py` — nova rota `delete-by-type/`.
-- `templates/finance_list.html` — botões de exclusão em massa para receitas e despesas.
+
+| Arquivo | Mudança |
+|---|---|
+| `finance/urls.py` | Adicionadas rotas `export-csv/` e `import-csv/` com nomes `finance:export_csv` e `finance:import_csv` |
+| `templates/finance_list.html` | Estrutura de topo reorganizada, botões CSV e filtro alinhados, tabela envolvida em container responsivo |
+| `static/css/style.css` | Adicionadas classes de layout para `topbar-actions`, `section-header`, `filter-form`, `select-filter`, `btn-filter` e `table-container` |
 
 **Detalhes técnicos:**
-- Exclusão em massa é executada com requisição `POST` e `CSRF` válido.
-- O tipo é validado em `['receita', 'despesa']` antes de apagar.
-- Exclui apenas transações do usuário logado.
-- Mensagem clara informa quantas transações foram removidas ou se nenhuma correspondência foi encontrada.
+- As ações de exportar/importar usam GET/POST corretos e o template mantém filtros ativos na exportação.
+- O layout foi estabilizado para telas menores com flex-wrap no cabeçalho e filtros.
+- A tabela permanece responsiva graças a `table-container`.
 
 ---
 
