@@ -1,3 +1,6 @@
+import json
+from datetime import date, timedelta
+from calendar import month_abbr
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordChangeForm
@@ -7,8 +10,6 @@ from django.http import JsonResponse
 from finance.models import Transaction
 from django.db.models import Sum
 from django.db.models.functions import TruncMonth
-from datetime import date, timedelta
-from calendar import month_abbr
 
 @login_required(login_url="/users/login/")
 def home(request):
@@ -50,9 +51,9 @@ def home(request):
         "total_expense": total_expense,
         "current_balance": current_balance,
         "recent_transactions": transactions[:5],
-        "chart_labels": labels,
-        "chart_income": income_data,
-        "chart_expense": expense_data,
+        "chart_labels": json.dumps(labels),
+        "chart_income": json.dumps(income_data),
+        "chart_expense": json.dumps(expense_data),
     }
     return render(request, "dashboard.html", context)
 
