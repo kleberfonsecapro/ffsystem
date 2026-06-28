@@ -33,7 +33,7 @@ def login_view(request):
             auth_login(request, user)
             return redirect("dashboard:home")
         else:
-            messages.error(request, "Usuário ou senha inválidos.")
+            messages.error(request, "Usuário, senha inválidos ou conta temporariamente bloqueada. ")
 
     return render(request, "login.html")
 
