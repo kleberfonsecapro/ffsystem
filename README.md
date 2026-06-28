@@ -72,6 +72,7 @@ cp .env.example .env
 #   - DB_PASSWORD (senha do banco)
 #   - DJANGO_SUPERUSER_PASSWORD (senha do admin)
 #   - GROQ_API_KEY (sua chave da Groq)
+#   - EMAIL_HOST, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD (opcional, para password reset)
 
 # 4. Suba os containers
 docker compose up -d
@@ -133,7 +134,7 @@ Este projeto passou por uma auditoria de segurança completa com **37 problemas 
 
 - [x] Rate limiting no login (`django-axes`)
 - [ ] Rate limiting na API Groq (custo financeiro)
-- [ ] Password reset (esqueci minha senha)
+- [x] Password reset (esqueci minha senha)
 - [ ] Testes unitários e de integração
 - [ ] Bundle local do Chart.js
 - [ ] Migrar `psycopg2-binary` → `psycopg2` em produção
@@ -148,6 +149,10 @@ Este projeto passou por uma auditoria de segurança completa com **37 problemas 
 | `/users/login/` | GET/POST | Login |
 | `/users/logout/` | **POST** | Logout (protegido contra CSRF) |
 | `/users/register/` | GET/POST | Cadastro |
+| `/users/password-reset/` | GET/POST | Solicitar redefinição de senha |
+| `/users/password-reset/done/` | GET | Confirmação de e-mail enviado |
+| `/users/password-reset/confirm/<uidb64>/<token>/` | GET/POST | Definir nova senha |
+| `/users/password-reset/complete/` | GET | Confirmação de senha alterada |
 | `/finance/` | GET | Lista de transações (paginada) |
 | `/finance/add/` | GET/POST | Nova transação (com validação) |
 | `/intelligence/chat/` | GET | Página do chat IA |

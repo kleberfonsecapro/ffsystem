@@ -418,9 +418,32 @@
 **Observação:** README já lista como pendência.
 
 ### 11. Password Reset (Esqueci Minha Senha)
-**Descrição:** Fluxo completo de recuperação de senha por email.
-**Arquivos envolvidos:** `core/urls.py`, `templates/`, `core/settings.py`
-**Observação:** Django já fornece `django.contrib.auth.views.PasswordResetView`.
+**Status:** ✅ **IMPLEMENTADO** (Junho 2026)
+
+**Descrição:** Fluxo completo de recuperação de senha por email usando as views built-in do Django (`django.contrib.auth.views`).
+
+**Arquivos alterados:**
+
+| Arquivo | Mudança |
+|---|---|
+| `core/settings.py` | Configuração de email (EMAIL_BACKEND, EMAIL_HOST, EMAIL_PORT, EMAIL_USE_TLS, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD, DEFAULT_FROM_EMAIL, PASSWORD_RESET_TIMEOUT) |
+| `users/urls.py` | 4 rotas de password reset usando `auth_views`: `password_reset`, `password_reset_done`, `password_reset_confirm`, `password_reset_complete` |
+| `templates/login.html` | Link "Esqueci minha senha" apontando para `users:password_reset` |
+| `templates/registration/password_reset_form.html` | Template para solicitar reset (email) |
+| `templates/registration/password_reset_done.html` | Template de confirmação de envio |
+| `templates/registration/password_reset_confirm.html` | Template para definir nova senha (token) |
+| `templates/registration/password_reset_complete.html` | Template de sucesso |
+| `.env.example` | Variáveis de email documentadas |
+
+**Detalhes técnicos:**
+- Usa `PasswordResetView`, `PasswordResetDoneView`, `PasswordResetConfirmView`, `PasswordResetCompleteView` do `django.contrib.auth.views`
+- Token gerado por `django.contrib.auth.tokens.default_token_generator` (HMAC com timestamp, válido por 1h - `PASSWORD_RESET_TIMEOUT = 3600`)
+- Email enviado via `django.core.mail.send_mail` com template HTML simples
+- Em desenvolvimento, usa `console.EmailBackend` (exibe email no console/logs)
+- Em produção, configurar SMTP via variáveis de ambiente (`EMAIL_HOST`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, etc.)
+- Link no login: "Esqueci minha senha" → `/users/password-reset/`
+
+---
 
 ### 12. Testes Unitários e de Integração
 **Descrição:** Cobrir models, views e a integração com Groq com testes.
@@ -449,4 +472,46 @@
 
 ---
 
-*Documentado em Junho 2026*
+### 11. Password Reset (Esqueci Minha Senha)
+
+**Data:** Junho 2026
+
+**Descrição:** Implementado fluxo completo de recuperação de senha usando as views built-in do Django (`PasswordResetView`, `PasswordResetDoneView`, `PasswordResetConfirmView`, `PasswordResetCompleteView`).
+
+**Arquivos alterados:**
+
+| Arquivo | Mudança |
+|---|---|
+| `.env.example` | Adicionadas variáveis de email (EMAIL_HOST, EMAIL_PORT, EMAIL_USE_TLS, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD, DEFAULT_FROM_EMAIL) |
+| `core/settings.py` | Configuração de email via variáveis de ambiente, `PASSWORD_RESET_TIMEOUT = 3600` (1 hora) |
+| `users/urls.py` | 4 rotas de password reset usando `django.contrib.auth.views` |
+| `templates/login.html` | Link "Esqueci minha senha" apontando para `users:password_reset` |
+| `templates/registration/password_reset_form.html` | Formulário de solicitação (email) |
+| `templates/registration/password_reset_done.html` | Confirmação de e-mail enviado |
+| `templates/registration/password_reset_email.html` | Template do e-mail HTML/texto com link de reset |
+| `templates/registration/password_reset_subject.txt` | Assunto do e-mail |
+| `templates/registration/password_reset_confirm.html` | Formulário de nova senha (token validation) |
+| `templates/registration/password_reset_complete.html` | Confirmação de senha alterada |
+
+**Detalhes técnicos:**
+- Usa views nativas do Django — zero código customizado de validação de token
+- Token gerado com `django.contrib.auth.tokens.PasswordResetTokenGenerator` (HMAC + timestamp, expira em 1 hora via `PASSWORD_RESET_TIMEOUT`)
+- E-mail enviado via `EMAIL_BACKEND` configurável (console em dev, SMTP em produção)
+- Templates seguem o design system existente (glass-panel, variáveis CSS, pt-BR)
+- Link no login: "Esqueci minha senha" → `/users/password-reset/`
+- Fluxo: email → token por e-mail → nova senha → login
+
+**Configuração necessária para produção:**
+```bash
+# .env
+EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USE_TLS=True
+EMAIL_HOST_USER=seu-email@gmail.com
+EMAIL_HOST_PASSWORD=sua-senha-de-app
+DEFAULT_FROM_EMAIL=SmartFinance AI <noreply@smartfinance.ai>
+```
+Sem configuração de SMTP, usa `console.EmailBackend` (imprime no log do container).
+
+---
