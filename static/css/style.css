@@ -338,6 +338,13 @@ tr:last-child td {
     color: var(--accent-red);
 }
 
+.badge-installment {
+    background: rgba(79, 70, 229, 0.15);
+    color: var(--accent-blue);
+    margin-left: 0.5rem;
+    font-size: 0.7rem;
+}
+
 /* AI Chat */
 .chat-container {
     display: flex;

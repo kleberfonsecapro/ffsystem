@@ -1,3 +1,4 @@
+import uuid
 from django.db import models
 from django.contrib.auth.models import User
 
@@ -31,8 +32,16 @@ class Transaction(models.Model):
     type = models.CharField(max_length=10, choices=TYPE_CHOICES, verbose_name="tipo")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="criado em")
 
+    is_installment = models.BooleanField(default=False, verbose_name="parcelado")
+    installment_total = models.IntegerField(null=True, blank=True, verbose_name="total de parcelas")
+    installment_number = models.IntegerField(null=True, blank=True, verbose_name="parcela atual")
+    installment_group = models.UUIDField(null=True, blank=True, verbose_name="grupo de parcelas")
+
     class Meta:
         ordering = ["-date", "-created_at"]
 
     def __str__(self):
-        return f"{self.description} - R$ {self.amount}"
+        label = f"{self.description} - R$ {self.amount}"
+        if self.is_installment:
+            label += f" ({self.installment_number}/{self.installment_total})"
+        return label

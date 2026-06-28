@@ -6,3 +6,4 @@ whitenoise==6.12.0
 psycopg2-binary==2.9.12
 python-dotenv==1.2.2
 django-axes==6.4.0
+python-dateutil==2.9.0

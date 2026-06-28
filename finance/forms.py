@@ -3,13 +3,29 @@ from .models import Transaction
 
 
 class TransactionForm(forms.ModelForm):
+    is_installment = forms.BooleanField(
+        required=False,
+        label="Pagamento parcelado",
+        widget=forms.CheckboxInput(attrs={"class": "form-check-input", "id": "id_is_installment"}),
+    )
+    installment_total = forms.IntegerField(
+        required=False,
+        label="Número de parcelas",
+        min_value=2,
+        max_value=120,
+        widget=forms.NumberInput(attrs={
+            "class": "form-control", "placeholder": "Ex: 12", "id": "id_installment_total",
+            "style": "display: none;",
+        }),
+    )
+
     class Meta:
         model = Transaction
         fields = ["description", "amount", "date", "category", "type"]
         labels = {
             "description": "Descrição",
-            "amount": "Valor (R$)",
-            "date": "Data",
+            "amount": "Valor total (R$)",
+            "date": "Data da primeira parcela",
             "category": "Categoria",
             "type": "Tipo",
         }
@@ -26,3 +42,17 @@ class TransactionForm(forms.ModelForm):
         if amount <= 0:
             raise forms.ValidationError("O valor deve ser maior que zero.")
         return amount
+
+    def clean(self):
+        cleaned = super().clean()
+        is_installment = cleaned.get("is_installment")
+        installment_total = cleaned.get("installment_total")
+
+        if is_installment:
+            if not installment_total or installment_total < 2:
+                self.add_error("installment_total", "Informe o número de parcelas (mínimo 2).")
+            else:
+                amount = cleaned.get("amount")
+                if amount and (amount * 100) % installment_total != 0:
+                    self.add_error("amount", "O valor total não é divisível exatamente pelo número de parcelas.")
+        return cleaned

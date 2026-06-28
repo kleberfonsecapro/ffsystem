@@ -99,49 +99,77 @@
 
 ---
 
+### 5. Transações Parceladas
+
+**Data:** Junho 2026
+
+**Descrição:** Adicionado suporte a lançamento de despesas parceladas. Ao marcar "Pagamento parcelado", o sistema divide automaticamente o valor total em N parcelas mensais.
+
+**Arquivos alterados:**
+
+| Arquivo | Mudança |
+|---|---|
+| `finance/models.py` | +4 campos: `is_installment`, `installment_total`, `installment_number`, `installment_group` |
+| `finance/forms.py` | Campos `is_installment` (checkbox) e `installment_total` com validação de divisibilidade |
+| `finance/views.py` | Lógica de criar N transações em lote com `relativedelta` |
+| `templates/finance_add.html` | JS que mostra/esconde campos de parcelamento |
+| `templates/finance_list.html` | Badge "1/12" nas transações parceladas |
+| `static/css/style.css` | Classe `.badge-installment` |
+| `requirements.txt` | `python-dateutil==2.9.0` |
+
+**Detalhes técnicos:**
+- Checkbox "Pagamento parcelado" no formulário de nova transação
+- Ao marcar, aparecem campos: "Número de parcelas" e "Valor total"
+- Validação: valor total deve ser exatamente divisível pelo número de parcelas
+- Cada parcela é uma `Transaction` individual com `installment_group` UUID compartilhado
+- Parcela 1 na data informada, parcela 2 no mês seguinte (+1 mês), etc.
+- Badge roxo "1/12" na listagem identificando parcelas
+
+---
+
 ## Pendências (não implementadas)
 
-### 5. Categorias Personalizadas
+### 6. Categorias Personalizadas
 **Descrição:** Permitir que o usuário crie suas próprias categorias em vez de usar as 8 fixas no model.
 **Arquivos envolvidos:** `finance/models.py` (novo model `Category`), `finance/forms.py`, migrações
 **Observação:** Model `Transaction.category` mudaria de `CharField` para `ForeignKey` para `Category`.
 
-### 6. Filtros na Listagem
+### 7. Filtros na Listagem
 **Descrição:** Adicionar filtros por tipo (receita/despesa) e categoria na página de listagem (filtro por mês já implementado).
 **Arquivos envolvidos:** `finance/views.py`, `templates/finance_list.html`
 **Observação:** Usar `django-filter` ou filtro manual via `request.GET`.
 
-### 7. Exportar Transações (CSV)
+### 8. Exportar Transações (CSV)
 **Descrição:** Botão para exportar as transações do usuário em formato CSV.
 **Arquivos envolvidos:** `finance/views.py`, `finance/urls.py`, `templates/finance_list.html`
 **Observação:** Usar `csv` module do Python ou `HttpResponse` com `content_type=text/csv`.
 
-### 8. Insight IA Real no Dashboard
+### 9. Insight IA Real no Dashboard
 **Descrição:** Substituir a regra simples de comparação receita/despesa por uma chamada real à Groq para gerar análise financeira contextual.
 **Arquivos envolvidos:** `dashboard/views.py`, `dashboard/urls.py`
 **Observação:** Reaproveitar o cliente Groq já configurado em `intelligence/views.py`.
 
-### 9. Rate Limiting na API Groq
+### 10. Rate Limiting na API Groq
 **Descrição:** Limitar chamadas à API Groq por usuário para controlar custos.
 **Arquivos envolvidos:** `intelligence/views.py`
 **Observação:** README já lista como pendência.
 
-### 10. Password Reset (Esqueci Minha Senha)
+### 11. Password Reset (Esqueci Minha Senha)
 **Descrição:** Fluxo completo de recuperação de senha por email.
 **Arquivos envolvidos:** `core/urls.py`, `templates/`, `core/settings.py`
 **Observação:** Django já fornece `django.contrib.auth.views.PasswordResetView`.
 
-### 11. Testes Unitários e de Integração
+### 12. Testes Unitários e de Integração
 **Descrição:** Cobrir models, views e a integração com Groq com testes.
 **Arquivos envolvidos:** `finance/tests.py`, `intelligence/tests.py`, `dashboard/tests.py`, `users/tests.py`
 **Observação:** README lista cobertura atual em 0%.
 
-### 12. Bundle Local do Chart.js
+### 13. Bundle Local do Chart.js
 **Descrição:** Substituir CDN do Chart.js por bundle local (elimina dependência externa).
 **Arquivos envolvidos:** `templates/base.html`, `static/js/`
 **Observação:** README já lista como pendência.
 
-### 13. Migrar psycopg2-binary para psycopg2
+### 14. Migrar psycopg2-binary para psycopg2
 **Descrição:** Substituir `psycopg2-binary` por `psycopg2` em produção (boas práticas).
 **Arquivos envolvidos:** `requirements.txt`, `Dockerfile`
 **Observação:** README já lista como pendência.

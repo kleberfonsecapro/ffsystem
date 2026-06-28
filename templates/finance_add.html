@@ -29,7 +29,49 @@
     <form method="POST" action="{% if editing %}{% url 'finance:edit' form.instance.pk %}{% else %}{% url 'finance:add' %}{% endif %}">
         {% csrf_token %}
         {{ form.as_p }}
-        <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; margin-top: 1rem;">{% if editing %}Atualizar Transação{% else %}Salvar Transação{% endif %}</button>
+        {% if not editing %}
+        <div id="installment-fields" style="display: none;">
+            <p>
+                <label for="{{ form.installment_total.id_for_label }}">{{ form.installment_total.label }}</label>
+                {{ form.installment_total }}
+                {% if form.installment_total.errors %}
+                <span class="errorlist">{{ form.installment_total.errors }}</span>
+                {% endif %}
+            </p>
+        </div>
+        {% endif %}
+        <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; margin-top: 1rem;">
+            {% if editing %}Atualizar Transação{% else %}Salvar Transação{% endif %}
+        </button>
     </form>
 </div>
+
+{% if not editing %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const checkbox = document.getElementById('id_is_installment');
+        const installmentFields = document.getElementById('installment-fields');
+        const amountLabel = document.querySelector('label[for="id_amount"]');
+        const amountInput = document.getElementById('id_amount');
+        const dateLabel = document.querySelector('label[for="id_date"]');
+
+        function toggleInstallment() {
+            if (checkbox.checked) {
+                installmentFields.style.display = 'block';
+                if (amountLabel) amountLabel.textContent = 'Valor total (R$)';
+                if (amountInput) amountInput.placeholder = 'Ex: 1200.00';
+                if (dateLabel) dateLabel.textContent = 'Data da primeira parcela';
+            } else {
+                installmentFields.style.display = 'none';
+                if (amountLabel) amountLabel.textContent = 'Valor (R$)';
+                if (amountInput) amountInput.placeholder = '0.00';
+                if (dateLabel) dateLabel.textContent = 'Data';
+            }
+        }
+
+        checkbox.addEventListener('change', toggleInstallment);
+        toggleInstallment();
+    });
+</script>
+{% endif %}
 {% endblock %}

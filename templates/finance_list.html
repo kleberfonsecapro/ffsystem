@@ -52,7 +52,12 @@
                     {% for tx in group.transactions %}
                     <tr>
                         <td>{{ tx.date|date:"d M Y" }}</td>
-                        <td style="font-weight: 500;">{{ tx.description }}</td>
+                        <td style="font-weight: 500;">
+                            {{ tx.description }}
+                            {% if tx.is_installment %}
+                            <span class="badge badge-installment">{{ tx.installment_number }}/{{ tx.installment_total }}</span>
+                            {% endif %}
+                        </td>
                         <td>{{ tx.category }}</td>
                         <td>
                             {% if tx.type == 'receita' %}

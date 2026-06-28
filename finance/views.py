@@ -1,9 +1,13 @@
+import uuid
+from datetime import date
+from decimal import Decimal
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
 from django.db.models import Sum
 from django.db.models.functions import TruncMonth
+from dateutil.relativedelta import relativedelta
 from .models import Transaction
 from .forms import TransactionForm
 
@@ -46,11 +50,36 @@ def finance_add(request):
     if request.method == "POST":
         form = TransactionForm(request.POST)
         if form.is_valid():
-            transaction = form.save(commit=False)
-            transaction.user = request.user
-            transaction.save()
-            messages.success(request, "Transação registrada com sucesso!")
-            return redirect("dashboard:home")
+            is_installment = form.cleaned_data.get("is_installment")
+            if is_installment:
+                total = form.cleaned_data["installment_total"]
+                total_amount = form.cleaned_data["amount"]
+                installment_amount = total_amount / Decimal(total)
+                first_date = form.cleaned_data["date"]
+                group_id = uuid.uuid4()
+
+                for i in range(1, total + 1):
+                    Transaction.objects.create(
+                        user=request.user,
+                        description=form.cleaned_data["description"],
+                        amount=installment_amount,
+                        date=first_date + relativedelta(months=i - 1),
+                        category=form.cleaned_data["category"],
+                        type=form.cleaned_data["type"],
+                        is_installment=True,
+                        installment_total=total,
+                        installment_number=i,
+                        installment_group=group_id,
+                    )
+
+                messages.success(request, f"Compra parcelada em {total}x de R$ {installment_amount} registrada!")
+                return redirect("dashboard:home")
+            else:
+                transaction = form.save(commit=False)
+                transaction.user = request.user
+                transaction.save()
+                messages.success(request, "Transação registrada com sucesso!")
+                return redirect("dashboard:home")
         else:
             messages.error(request, "Erro nos dados informados. Verifique e tente novamente.")
     else:
