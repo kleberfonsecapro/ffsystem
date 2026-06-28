@@ -28,6 +28,25 @@
 
 ---
 
+### 8. Exclusão em Massa por Tipo
+
+**Data:** Junho 2026
+
+**Descrição:** Adicionada regra que permite apagar todas as transações de um tipo (`receita` ou `despesa`) de uma vez.
+
+**Arquivos alterados:**
+- `finance/views.py` — nova view `finance_delete_by_type` que apaga todas as transações do usuário por tipo com validação de tipo.
+- `finance/urls.py` — nova rota `delete-by-type/`.
+- `templates/finance_list.html` — botões de exclusão em massa para receitas e despesas.
+
+**Detalhes técnicos:**
+- Exclusão em massa é executada com requisição `POST` e `CSRF` válido.
+- O tipo é validado em `['receita', 'despesa']` antes de apagar.
+- Exclui apenas transações do usuário logado.
+- Mensagem clara informa quantas transações foram removidas ou se nenhuma correspondência foi encontrada.
+
+---
+
 ### 2. Rate Limiting no Login
 
 **Data:** Junho 2026
@@ -176,25 +195,6 @@
 - As primeiras `remainder` parcelas recebem `base_cents + 1` centavo, as demais recebem `base_cents`
 - Ex: R$ 3028,11 em 12x → 302811 centavos → 302811 // 12 = 25234, resto 3 → 3x de R$ 252,35 + 9x de R$ 252,34
 - Garantia: a soma de todas as parcelas em centavos é sempre igual a `total_cents`
-
----
-
-### 8. Exportar e Importar Transações via CSV
-
-**Data:** Junho 2026
-
-**Descrição:** Adicionada exportação filtrada de transações para CSV e importação via modal com validação de arquivo.
-
-**Arquivos alterados:**
-- `finance/views.py` — views `export_csv` e `import_csv` com filtros aplicados antes da exportação e parser de CSV de importação.
-- `finance/forms.py` — form `CSVImportForm` que valida extensão `.csv`, tamanho, UTF-8 e delimitador `;`.
-- `finance/urls.py` — rotas `export/csv/` e `import/csv/`.
-- `templates/finance_list.html` — botão de exportação que preserva filtros e modal de importação.
-
-**Detalhes técnicos:**
-- Exportação usa `text/csv; charset=utf-8`, `Content-Disposition` para download e `csv.writer(delimiter=";")`.
-- Importação aceita cabeçalho `Data;Descrição;Categoria;Tipo;Valor;Parcela;Paga`, cria categorias padrão se necessário e registra transações válidas.
-- Validação de `Paga` aceita `Sim`/`Não`, e `Parcela` aceita `1/12` com parcelamento opcional.
 
 ---
 

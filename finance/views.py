@@ -303,6 +303,26 @@ def finance_delete(request, pk):
 
 @login_required(login_url="/users/login/")
 @require_POST
+def finance_delete_by_type(request):
+    selected_type = request.POST.get("tipo")
+    if selected_type not in ["receita", "despesa"]:
+        messages.error(request, "Tipo inválido para exclusão em massa.")
+        return redirect("finance:list")
+
+    transactions = Transaction.objects.filter(user=request.user, type=selected_type)
+    count = transactions.count()
+    if count == 0:
+        messages.info(request, f"Nenhuma transação do tipo {selected_type} foi encontrada.")
+    else:
+        transactions.delete()
+        label = "receitas" if selected_type == "receita" else "despesas"
+        messages.success(request, f"{count} {label} excluída(s) com sucesso!")
+
+    return redirect("finance:list")
+
+
+@login_required(login_url="/users/login/")
+@require_POST
 def finance_toggle_paid(request, pk):
     transaction = get_object_or_404(Transaction, pk=pk, user=request.user)
     transaction.paid = not transaction.paid
