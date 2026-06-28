@@ -13,12 +13,28 @@
 <div class="card" style="overflow-x: auto;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
         <h3 style="color: var(--text-secondary); font-size: 0.9rem;">CONTAS DA FAMÍLIA</h3>
-        <form method="GET" style="display: flex; gap: 0.5rem; align-items: center;">
+        <form method="GET" style="display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap;">
             <select name="mes" style="background: var(--bg-main); color: var(--text-primary); border: 1px solid var(--border-color); padding: 0.4rem 0.6rem; border-radius: 6px; font-size: 0.85rem;">
                 <option value="">Todos os meses</option>
                 {% for m in months_available %}
                 <option value="{{ m|date:'Y-m' }}" {% if selected_month == m|date:'Y-m' %}selected{% endif %}>
                     {{ m|date:'F Y' }}
+                </option>
+                {% endfor %}
+            </select>
+            <select name="tipo" style="background: var(--bg-main); color: var(--text-primary); border: 1px solid var(--border-color); padding: 0.4rem 0.6rem; border-radius: 6px; font-size: 0.85rem;">
+                <option value="">Todos os tipos</option>
+                {% for value, label in type_choices %}
+                <option value="{{ value }}" {% if selected_type == value %}selected{% endif %}>
+                    {{ label }}
+                </option>
+                {% endfor %}
+            </select>
+            <select name="categoria" style="background: var(--bg-main); color: var(--text-primary); border: 1px solid var(--border-color); padding: 0.4rem 0.6rem; border-radius: 6px; font-size: 0.85rem; min-width: 160px;">
+                <option value="">Todas as categorias</option>
+                {% for cat in categories_available %}
+                <option value="{{ cat }}" {% if selected_category == cat %}selected{% endif %}>
+                    {{ cat }}
                 </option>
                 {% endfor %}
             </select>

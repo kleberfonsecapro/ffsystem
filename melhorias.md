@@ -299,12 +299,29 @@
 
 ---
 
-## ⏳ A Implementar
+### 22. Filtros na Listagem (Tipo + Categoria)
 
-### 7. Filtros na Listagem
-**Descrição:** Adicionar filtros por tipo (receita/despesa) e categoria na página de listagem (filtro por mês já implementado).
-**Arquivos envolvidos:** `finance/views.py`, `templates/finance_list.html`
-**Observação:** Usar `django-filter` ou filtro manual via `request.GET`.
+**Data:** Junho 2026
+
+**Descrição:** Adicionados filtros por tipo (receita/despesa) e categoria na página de listagem de transações, complementando o filtro por mês já existente.
+
+**Arquivos alterados:**
+
+| Arquivo | Mudança |
+|---|---|
+| `finance/views.py` | Parâmetros `tipo` e `categoria` no GET; filtros `type` e `category_ref__name` no queryset; `categories_available` ordenadas; context com `type_choices`, `categories_available`, `selected_type`, `selected_category` |
+| `templates/finance_list.html` | Dois `<select>` adicionados ao formulário de filtro: "Tipo" (receita/despesa) e "Categoria" (lista dinâmica de `categories_available`); seleções persistem via `selected` |
+
+**Detalhes técnicos:**
+- Filtros aplicados no queryset **antes** do agrupamento em Python — performance mantida
+- Combina com filtro de mês existente: `?mes=2026-06&tipo=despesa&categoria=Alimentação`
+- Categorias disponíveis: globais (`user=None`) + do usuário logado, ordenadas alfabeticamente
+- Formulário único GET, botão "Filtrar", seleções persistem visualmente
+- Futuramente: adicionar categorias custom por usuário já funcionará automaticamente
+
+---
+
+## ⏳ A Implementar
 
 ### 8. Exportar Transações (CSV)
 **Descrição:** Botão para exportar as transações do usuário em formato CSV.

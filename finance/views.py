@@ -8,7 +8,7 @@ from django.views.decorators.http import require_POST
 from django.db.models import Sum
 from django.db.models.functions import TruncMonth
 from dateutil.relativedelta import relativedelta
-from .models import Transaction
+from .models import Transaction, Category
 from .forms import TransactionForm
 
 @login_required(login_url="/users/login/")
@@ -25,6 +25,18 @@ def finance_list(request):
     selected_month = request.GET.get("mes")
     if selected_month:
         qs = qs.filter(date__year=selected_month[:4], date__month=selected_month[5:7])
+
+    selected_type = request.GET.get("tipo")
+    if selected_type:
+        qs = qs.filter(type=selected_type)
+
+    selected_category = request.GET.get("categoria")
+    if selected_category:
+        qs = qs.filter(category_ref__name=selected_category)
+
+    categories_available = Category.objects.filter(
+        user__in=[None, request.user]
+    ).values_list("name", flat=True).distinct().order_by("name")
 
     grouped = []
     current_month = None
@@ -43,6 +55,10 @@ def finance_list(request):
         "grouped_transactions": grouped,
         "months_available": [m["month"] for m in months_available],
         "selected_month": selected_month,
+        "selected_type": selected_type,
+        "selected_category": selected_category,
+        "categories_available": categories_available,
+        "type_choices": Transaction.TYPE_CHOICES,
     })
 
 @login_required(login_url="/users/login/")
