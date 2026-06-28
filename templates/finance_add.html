@@ -37,22 +37,8 @@
             <label for="id_amount">{{ form.amount.label }}</label>
             {{ form.amount }}
         </p>
-        <p>
-            <label for="id_date">{{ form.date.label }}</label>
-            {{ form.date }}
-        </p>
-        <p>
-            <label for="id_category">{{ form.category.label }}</label>
-            {{ form.category }}
-        </p>
-        <p>
-            <label>{{ form.type.label }}</label>
-            {{ form.type }}
-        </p>
 
         {% if not editing %}
-        <div class="form-divider"></div>
-
         <div class="installment-toggle">
             <label class="toggle-label">
                 <span class="toggle-text">
@@ -76,6 +62,19 @@
             <div id="installment-preview" class="installment-preview"></div>
         </div>
         {% endif %}
+
+        <p>
+            <label for="id_date">{{ form.date.label }}</label>
+            {{ form.date }}
+        </p>
+        <p>
+            <label for="id_category">{{ form.category.label }}</label>
+            {{ form.category }}
+        </p>
+        <p>
+            <label>{{ form.type.label }}</label>
+            {{ form.type }}
+        </p>
 
         <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; margin-top: 1rem;">
             {% if editing %}Atualizar Transação{% else %}Salvar Transação{% endif %}

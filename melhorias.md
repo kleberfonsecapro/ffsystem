@@ -122,6 +122,7 @@
 - Preview dinâmico: "12x de R$ 100,00 — sem juros" conforme usuário digita
 - Campos de parcelamento em container com fundo escuro consistente
 - Labels e placeholders mudam dinamicamente ao ativar/desativar parcelamento
+- Toggle posicionado logo após o campo Valor, antes dos demais campos (fluxo natural: descreve → valor → parcelamento → data → categoria → tipo)
 
 **Detalhes técnicos:**
 - Toggle switch "Pagamento parcelado" no formulário de nova transação
