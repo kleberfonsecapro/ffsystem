@@ -23,6 +23,7 @@
                     <th>Categoria</th>
                     <th>Tipo</th>
                     <th>Valor</th>
+                    <th>Ações</th>
                 </tr>
             </thead>
             <tbody>
@@ -41,10 +42,18 @@
                     <td class="{% if tx.type == 'receita' %}text-green{% else %}text-red{% endif %}" style="font-weight: 600;">
                         R$ {{ tx.amount|floatformat:2 }}
                     </td>
+                    <td>
+                        <form method="POST" action="{% url 'finance:delete' tx.pk %}" onsubmit="return confirm('Tem certeza que deseja excluir esta transação?')">
+                            {% csrf_token %}
+                            <button type="submit" class="btn-delete" title="Excluir">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </form>
+                    </td>
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="5" style="text-align: center; color: var(--text-secondary);">Nenhuma transação registrada ainda.</td>
+                    <td colspan="6" style="text-align: center; color: var(--text-secondary);">Nenhuma transação registrada ainda.</td>
                 </tr>
                 {% endfor %}
             </tbody>

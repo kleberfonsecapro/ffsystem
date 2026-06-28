@@ -296,6 +296,21 @@ tr:last-child td {
     font-weight: 500;
 }
 
+.btn-delete {
+    background: none;
+    border: none;
+    color: var(--accent-red);
+    cursor: pointer;
+    padding: 0.4rem 0.6rem;
+    border-radius: 6px;
+    transition: all 0.2s;
+    font-size: 1rem;
+}
+
+.btn-delete:hover {
+    background: rgba(239, 68, 68, 0.15);
+}
+
 .badge-income {
     background: rgba(16, 185, 129, 0.1);
     color: var(--accent-green);
