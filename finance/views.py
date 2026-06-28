@@ -38,3 +38,17 @@ def finance_delete(request, pk):
     transaction.delete()
     messages.success(request, "Transação excluída com sucesso!")
     return redirect("finance:list")
+
+@login_required(login_url="/users/login/")
+def finance_edit(request, pk):
+    transaction = get_object_or_404(Transaction, pk=pk, user=request.user)
+    
+    if request.method == "POST":
+        form = TransactionForm(request.POST,instance=transaction)
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Transação atualizada com sucesso!")
+            return redirect("finance:list")
+    else:
+        form = TransactionForm(instance=transaction)
+    return render(request, "finance_add.html", {"form":form, "editing": True})

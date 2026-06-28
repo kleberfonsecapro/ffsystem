@@ -1,10 +1,12 @@
 {% extends 'base.html' %}
 
-{% block title %}Nova Transação - SmartFinance AI{% endblock %}
+{% block title %}
+{% if editing %}Editar Transação - SmartFinance AI
+{%else %}Nova Transação - SmartFinance AI{% endif %} {% endblock %}
 
 {% block content %}
 <div class="topbar">
-    <h1 class="page-title">Registrar Movimentação</h1>
+    <h1 class="page-title">{% if editing %}Editar Movimentação{% else %}Registrar Movimentação{% endif %}</h1>
 </div>
 
 <div class="card" style="max-width: 600px; margin: 0 auto;">
@@ -24,10 +26,10 @@
             </div>
         {% endfor %}
     {% endif %}
-    <form method="POST" action="{% url 'finance:add' %}">
+    <form method="POST" action="{% if editing %}{% url 'finance:edit' form.instance.pk %}{% else %}{% url 'finance:add' %}{% endif %}">
         {% csrf_token %}
         {{ form.as_p }}
-        <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; margin-top: 1rem;">Salvar Transação</button>
+        <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; margin-top: 1rem;">{% if editing %}Atualizar Transação{% else %}Salvar Transação{% endif %}</button>
     </form>
 </div>
 {% endblock %}

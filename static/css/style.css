@@ -311,6 +311,23 @@ tr:last-child td {
     background: rgba(239, 68, 68, 0.15);
 }
 
+.btn-edit {
+    background: none;
+    border: none;
+    color: var(--accent-blue);
+    cursor: pointer;
+    padding: 0.4rem 0.6rem;
+    border-radius: 6px;
+    transition: all 0.2s;
+    font-size: 1rem;
+    text-decoration: none;
+    display: inline-flex;
+}
+
+.btn-edit:hover {
+    background: rgba(79, 70, 229, 0.15);
+}
+
 .badge-income {
     background: rgba(16, 185, 129, 0.1);
     color: var(--accent-green);
