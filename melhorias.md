@@ -130,7 +130,9 @@
 - Validação: valor total deve ser exatamente divisível pelo número de parcelas
 - Cada parcela é uma `Transaction` individual com `installment_group` UUID compartilhado
 - Parcela 1 na data informada, parcela 2 no mês seguinte (+1 mês), etc.
+- **Cada parcela lança APENAS seu valor individual no mês** (ex: R$ 100), não o valor total (R$ 1200)
 - Badge roxo "1/12" na listagem identificando parcelas
+- Dashboard reflete corretamente: total geral soma todas as parcelas, gráfico mensal mostra apenas a parcela do mês
 
 ---
 
