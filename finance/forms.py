@@ -50,8 +50,4 @@ class TransactionForm(forms.ModelForm):
         if is_installment:
             if not installment_total or installment_total < 2:
                 self.add_error("installment_total", "Informe o número de parcelas (mínimo 2).")
-            else:
-                amount = cleaned.get("amount")
-                if amount and (amount * 100) % installment_total != 0:
-                    self.add_error("amount", "O valor total não é divisível exatamente pelo número de parcelas.")
         return cleaned

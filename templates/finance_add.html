@@ -100,8 +100,17 @@
             const total = parseInt(totalInput.value) || 0;
 
             if (checkbox.checked && amount > 0 && total >= 2) {
-                const parcela = (amount / total).toFixed(2);
-                preview.innerHTML = `<i class="fa-solid fa-calculator"></i> ${total}x de <strong>R$ ${parcela}</strong> — sem juros`;
+                const totalCents = Math.round(amount * 100);
+                const base = Math.floor(totalCents / total);
+                const rem = totalCents % total;
+                if (rem === 0) {
+                    const parcela = (base / 100).toFixed(2);
+                    preview.innerHTML = `<i class="fa-solid fa-calculator"></i> ${total}x de <strong>R$ ${parcela}</strong> — sem juros`;
+                } else {
+                    const maior = ((base + 1) / 100).toFixed(2);
+                    const menor = (base / 100).toFixed(2);
+                    preview.innerHTML = `<i class="fa-solid fa-calculator"></i> ${total}x: ${rem}x de <strong>R$ ${maior}</strong> e ${total - rem}x de <strong>R$ ${menor}</strong> — sem juros`;
+                }
                 preview.style.display = 'block';
             } else {
                 preview.style.display = 'none';

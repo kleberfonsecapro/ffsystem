@@ -54,15 +54,20 @@ def finance_add(request):
             if is_installment:
                 total = form.cleaned_data["installment_total"]
                 total_amount = form.cleaned_data["amount"]
-                installment_amount = total_amount / Decimal(total)
                 first_date = form.cleaned_data["date"]
                 group_id = uuid.uuid4()
+                total_cents = int(round(total_amount * 100))
+                base_cents = total_cents // total
+                remainder = total_cents % total
 
                 for i in range(1, total + 1):
+                    parcel_cents = base_cents + (1 if i <= remainder else 0)
+                    parcel_amount = Decimal(parcel_cents) / Decimal(100)
+                    
                     Transaction.objects.create(
                         user=request.user,
                         description=form.cleaned_data["description"],
-                        amount=installment_amount,
+                        amount=parcel_amount,
                         date=first_date + relativedelta(months=i - 1),
                         category=form.cleaned_data["category"],
                         type=form.cleaned_data["type"],
@@ -72,7 +77,7 @@ def finance_add(request):
                         installment_group=group_id,
                     )
 
-                messages.success(request, f"Compra parcelada em {total}x de R$ {installment_amount} registrada!")
+                messages.success(request, f"Compra parcelada em {total}x registrada!")
                 return redirect("dashboard:home")
             else:
                 transaction = form.save(commit=False)

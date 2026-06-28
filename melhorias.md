@@ -155,6 +155,30 @@
 
 ---
 
+### 7. Correção: Valores Não Divisíveis em Parcelamento
+
+**Data:** Junho 2026
+
+**Problema:** Ao lançar uma despesa parcelada com valor total não exatamente divisível pelo número de parcelas (ex: R$ 3.028,11 em 12x), o formulário rejeitava com erro "O valor total não é divisível exatamente pelo número de parcelas".
+
+**Solução:** Removida a validação de divisibilidade em centavos e implementada distribuição do resto (`remainder`) nas primeiras parcelas no backend.
+
+**Arquivos alterados:**
+
+| Arquivo | Mudança |
+|---|---|
+| `finance/forms.py` | Removido `else` com validação `(amount * 100) % installment_total != 0` |
+| `finance/views.py` | Substituída divisão simples por aritmética de centavos: `total_cents // total` + distribuição do `remainder` nas primeiras parcelas |
+| `templates/finance_add.html` | Preview JS agora calcula com centavos e mostra distribuição quando há resto |
+
+**Detalhes técnicos:**
+- Cálculo: `total_cents = round(amount * 100)`, `base_cents = total_cents // total`, `remainder = total_cents % total`
+- As primeiras `remainder` parcelas recebem `base_cents + 1` centavo, as demais recebem `base_cents`
+- Ex: R$ 3028,11 em 12x → 302811 centavos → 302811 // 12 = 25234, resto 3 → 3x de R$ 252,35 + 9x de R$ 252,34
+- Garantia: a soma de todas as parcelas em centavos é sempre igual a `total_cents`
+
+---
+
 ## Pendências (não implementadas)
 
 ### 6. Categorias Personalizadas
@@ -224,6 +248,11 @@
 - `static/css/style.css` — classes `.btn-paid`, `.paid-row`, `.badge-paid`, `.text-paid`
 
 ---
+
+### 19. Histórico de Conversas com IA no Banco (Pendente)
+**Descrição:** Criar model `ConversationHistory` para armazenar as conversas do usuário com a IA (mensagens e respostas compactadas). Manter por 7 dias, com deleção automática via cron/management command. A IA poderá recuperar o histórico quando o usuário pedir para "relembrar toda a conversa".
+**Arquivos envolvidos:** `intelligence/models.py`, `intelligence/management/commands/`, `core/settings.py`
+**Observação:** Compactar mensagens antes de salvar (ex: zlib/gzip no campo TextField/ BinaryField). O comando de limpeza pode rodar via cron no docker ou como task periódica.
 
 ### 18. Botão IA Flutuante na Gestão Financeira (Pendente)
 **Descrição:** Adicionar um botão "IA" ao lado de "Nova Transação" na página de gestão financeira. Ao clicar, abre um chat flutuante (modal/overlay) para conversar com o assistente IA, sem ocupar espaço fixo na tela.
