@@ -205,9 +205,9 @@
 ### 15. Filtro date__lte no Dashboard para Excluir Parcelas Futuras
 **Data:** Junho 2026
 **Problema:** Dashboard somava transações de todos os tempos, incluindo parcelas futuras. Ex: geladeira de R$ 1.949,02 em 10x aparecia como despesa total de R$ 1.949,02, confundindo o saldo atual.
-**Solução:** Adicionar `date__lte=today` nos aggregates de `total_income`, `total_expense` e `recent_transactions` nas views `home` e `insight_api`. Apenas parcelas já vencidas (até a data atual) entram no cálculo dos totais.
+**Solução:** Adicionar `date__lte=today` APENAS em `total_expense`. A receita (`total_income`) e `recent_transactions` não têm filtro de data — toda receita cadastrada (inclusive salário futuro) aparece no total. Motivo: o usuário espera ver toda a receita prevista, mas apenas despesas já vencidas.
 **Arquivos envolvidos:** `dashboard/views.py`
-**Observação:** O gráfico mensal (últimos 6 meses) e a listagem por mês não foram alterados — continuam mostrando parcelas futuras dentro do período, o que é desejável.
+**Observação:** O gráfico mensal (últimos 6 meses) e a listagem por mês não foram alterados. O insight API seguiu a mesma lógica: receita total, despesa com date__lte.
 
 ---
 

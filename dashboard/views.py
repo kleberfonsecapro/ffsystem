@@ -16,7 +16,7 @@ def home(request):
     transactions = Transaction.objects.filter(user=request.user)
     today = date.today()
 
-    total_income = transactions.filter(type="receita", date__lte=today).aggregate(Sum("amount"))["amount__sum"] or 0
+    total_income = transactions.filter(type="receita").aggregate(Sum("amount"))["amount__sum"] or 0
     total_expense = transactions.filter(type="despesa", date__lte=today).aggregate(Sum("amount"))["amount__sum"] or 0
     current_balance = total_income - total_expense
 
@@ -51,7 +51,7 @@ def home(request):
         "total_income": total_income,
         "total_expense": total_expense,
         "current_balance": current_balance,
-        "recent_transactions": transactions.filter(date__lte=today)[:5],
+        "recent_transactions": transactions[:5],
         "chart_labels": json.dumps(labels),
         "chart_income": json.dumps(income_data),
         "chart_expense": json.dumps(expense_data),
@@ -66,7 +66,7 @@ def insight_api(request):
     if not transactions.exists():
         return JsonResponse({"insight": "Registre algumas transações para análise."})
 
-    total_income = transactions.filter(type="receita", date__lte=today).aggregate(Sum("amount"))["amount__sum"] or 0
+    total_income = transactions.filter(type="receita").aggregate(Sum("amount"))["amount__sum"] or 0
     total_expense = transactions.filter(type="despesa", date__lte=today).aggregate(Sum("amount"))["amount__sum"] or 0
 
     if total_expense > total_income:
