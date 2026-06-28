@@ -9,10 +9,10 @@ from django.http import JsonResponse
 from django.views.decorators.http import require_POST
 from groq import Groq
 from finance.models import Transaction
+from finance.categories import resolve_category, default_category_names
 
 logger = logging.getLogger(__name__)
 
-VALID_CATEGORIES = {"Salário", "Alimentação", "Transporte", "Lazer", "Moradia", "Saúde", "Educação", "Outros"}
 VALID_TYPES = {"receita", "despesa"}
 
 
@@ -39,6 +39,7 @@ def chat_api(request):
         return JsonResponse({"reply": "Assistente IA não configurado. Contate o administrador."})
 
     today = date.today().isoformat()
+    categories_hint = ", ".join(default_category_names()) or "Outros"
 
     system_prompt = f"""
 Você é SmartFinance AI, assistente financeiro.
@@ -46,7 +47,8 @@ Se reconhecer um registro financeiro (gasto/ganho), retorne JSON:
 {{"is_transaction": true, "amount": 100.50, "date": "{today}",
  "category": "Alimentação", "type": "despesa", "description": "Comida"}}
 Se NÃO for transação:
-"is_transaction": false, "reply": "sua resposta"
+{{"is_transaction": false, "reply": "sua resposta"}}
+Categorias disponíveis: {categories_hint}
 IMPORTANTE: Apenas retorne JSON válido. Não invente dados.
 """
 
@@ -80,8 +82,8 @@ IMPORTANTE: Apenas retorne JSON válido. Não invente dados.
             if tx_type not in VALID_TYPES:
                 errors.append(f"Tipo inválido: {tx_type}")
 
-            category = str(result.get("category", "")).strip()
-            if not category or len(category) > 100:
+            category_name = str(result.get("category", "")).strip()
+            if not category_name or len(category_name) > 100:
                 errors.append("Categoria inválida")
 
             description = str(result.get("description", "Automático")).strip()
@@ -94,17 +96,22 @@ IMPORTANTE: Apenas retorne JSON válido. Não invente dados.
                 logger.warning("LLM retornou dados inválidos: %s | raw: %s", errors, raw)
                 return JsonResponse({"reply": f"Não foi possível registrar: {'; '.join(errors)}. Tente novamente."})
 
+            category_ref = resolve_category(request.user, category_name, tx_type)
+
             Transaction.objects.create(
                 user=request.user,
                 description=description or "Automático",
                 amount=amount,
                 date=tx_date,
-                category=category,
+                category_ref=category_ref,
                 type=tx_type,
             )
 
-            logger.info("Transação criada via IA: user=%s type=%s amount=%s", request.user, tx_type, amount)
-            ai_reply = f"Registrei: {tx_type.upper()} de R$ {amount} em {category}"
+            logger.info(
+                "Transação criada via IA: user=%s type=%s amount=%s category=%s",
+                request.user, tx_type, amount, category_ref.name,
+            )
+            ai_reply = f"Registrei: {tx_type.upper()} de R$ {amount} em {category_ref.name}"
         else:
             ai_reply = result.get("reply", "Não entendi.")
 

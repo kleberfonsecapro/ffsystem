@@ -63,6 +63,11 @@ class Transaction(models.Model):
     def category_display(self):
         return self.category_ref.name if self.category_ref_id else self.category
 
+    def save(self, *args, **kwargs):
+        if self.category_ref_id:
+            self.category = self.category_ref.name
+        super().save(*args, **kwargs)
+
     def __str__(self):
         label = f"{self.description} - R$ {self.amount}"
         if self.is_installment:

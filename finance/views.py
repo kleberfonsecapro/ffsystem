@@ -12,6 +12,7 @@ from django.db.models.functions import TruncMonth
 from dateutil.relativedelta import relativedelta
 from .models import Transaction, Category
 from .forms import TransactionForm, CSVImportForm
+from .categories import resolve_category
 
 
 def apply_transaction_filters(qs, request):
@@ -209,15 +210,7 @@ def import_csv(request):
             line_number += 1
             continue
 
-        category_ref = Category.objects.filter(name__iexact=raw_category, user=request.user).first()
-        if not category_ref:
-            category_ref = Category.objects.filter(name__iexact=raw_category, user__isnull=True).first()
-        if not category_ref:
-            category_ref = Category.objects.create(
-                name=raw_category,
-                type=raw_type if raw_type in ["receita", "despesa"] else "ambos",
-                user=request.user,
-            )
+        category_ref = resolve_category(request.user, raw_category, raw_type)
 
         Transaction.objects.create(
             user=request.user,
@@ -225,7 +218,6 @@ def import_csv(request):
             amount=amount_value,
             date=date_value,
             category_ref=category_ref,
-            category=category_ref.name,
             type=raw_type,
             paid=paid_value,
             is_installment=is_installment,

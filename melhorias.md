@@ -342,6 +342,50 @@
 
 ---
 
+### 23. Restauração das Rotas CSV (Import/Export)
+
+**Data:** Junho 2026
+
+**Problema:** As rotas `export-csv/` e `import-csv/` tinham sido removidas de `finance/urls.py`, enquanto as views e o template `finance_list.html` continuavam referenciando `finance:export_csv` e `finance:import_csv`, quebrando exportação e importação na listagem.
+
+**Solução:** Restauradas as duas rotas apontando para `views.export_csv` e `views.import_csv`.
+
+**Arquivos alterados:**
+
+| Arquivo | Mudança |
+|---|---|
+| `finance/urls.py` | Rotas `export-csv/` e `import-csv/` restauradas |
+
+---
+
+### 24. Unificação de Categorias (`category_ref` como fonte única)
+
+**Data:** Junho 2026
+
+**Problema:** Conviviam o campo legado `category` (choices fixas) e o FK `category_ref` (model `Category`). Formulário manual e import CSV usavam `category_ref`; o assistente IA gravava só em `category`, gerando inconsistência entre canais de entrada.
+
+**Solução:**
+- Criado `finance/categories.py` com `resolve_category()` e `default_category_names()` — lógica centralizada de busca/criação de categorias
+- `Transaction.save()` sincroniza `category` a partir de `category_ref.name` (campo legado mantido por compatibilidade, preenchido automaticamente)
+- Import CSV refatorado para usar `resolve_category()`
+- Chat IA passa a gravar via `category_ref`; prompt lista categorias dinamicamente do banco
+
+**Arquivos alterados:**
+
+| Arquivo | Mudança |
+|---|---|
+| `finance/categories.py` | Novo módulo com helpers de categoria |
+| `finance/models.py` | `save()` sincroniza `category` ← `category_ref` |
+| `finance/views.py` | Import CSV usa `resolve_category()` |
+| `intelligence/views.py` | IA usa `category_ref` + categorias dinâmicas no prompt |
+
+**Detalhes técnicos:**
+- `resolve_category(user, name, tx_type)`: busca categoria do usuário → global → cria personalizada
+- Campo `category` permanece no model para migrations e dados legados, mas deixa de ser preenchido manualmente nos fluxos novos
+- `category_display` continua funcionando para registros antigos sem `category_ref`
+
+---
+
 ## ⏳ A Implementar
 
 ### 9. Insight IA Real no Dashboard
