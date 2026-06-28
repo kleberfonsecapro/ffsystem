@@ -50,37 +50,52 @@
 
 ---
 
+### 3. Editar Transações
+
+**Data:** Junho 2026
+
+**Descrição:** Adicionada funcionalidade para editar transações existentes, completando o CRUD.
+
+**Arquivos alterados:**
+
+| Arquivo | Mudança |
+|---|---|
+| `finance/views.py` | Nova view `finance_edit` com form pré-preenchido via `instance` |
+| `finance/urls.py` | Nova rota `<int:pk>/edit/` |
+| `templates/finance_add.html` | Action do form dinâmica, título e botão condicionais (add/edit) |
+| `templates/finance_list.html` | Botão "Editar" (ícone lápis) ao lado do Excluir |
+| `static/css/style.css` | Classe `.btn-edit` com estilo azul e hover |
+
+**Detalhes técnicos:**
+- Reaproveita o template `finance_add.html` com contexto `"editing": True`
+- `TransactionForm(instance=transaction)` pré-preenche os campos automaticamente
+- `form.save()` sem `commit=False` — atualiza o registro existente
+- Verifica que a transação pertence ao usuário logado (`get_object_or_404`)
+- Redireciona para a lista de transações após salvar
+
+---
+
 ## Pendências (não implementadas)
 
-### 3. Editar Transações
-**Descrição:** Adicionar edição de transações na listagem para completar o CRUD.
-**Arquivos envolvidos:** `finance/views.py`, `finance/urls.py`, `templates/finance_list.html`
-**Observação:** A view de add já existe, basta criar uma similar para edição com `UpdateView` ou view function.
-
-### 3. Categorias Personalizadas
+### 4. Categorias Personalizadas
 **Descrição:** Permitir que o usuário crie suas próprias categorias em vez de usar as 8 fixas no model.
 **Arquivos envolvidos:** `finance/models.py` (novo model `Category`), `finance/forms.py`, migrações
 **Observação:** Model `Transaction.category` mudaria de `CharField` para `ForeignKey` para `Category`.
 
-### 4. Filtros na Listagem
+### 5. Filtros na Listagem
 **Descrição:** Adicionar filtros por tipo (receita/despesa), data e categoria na página de listagem.
 **Arquivos envolvidos:** `finance/views.py`, `templates/finance_list.html`
 **Observação:** Usar `django-filter` ou filtro manual via `request.GET`.
 
-### 5. Exportar Transações (CSV)
+### 6. Exportar Transações (CSV)
 **Descrição:** Botão para exportar as transações do usuário em formato CSV.
 **Arquivos envolvidos:** `finance/views.py`, `finance/urls.py`, `templates/finance_list.html`
 **Observação:** Usar `csv` module do Python ou `HttpResponse` com `content_type=text/csv`.
 
-### 6. Insight IA Real no Dashboard
+### 7. Insight IA Real no Dashboard
 **Descrição:** Substituir a regra simples de comparação receita/despesa por uma chamada real à Groq para gerar análise financeira contextual.
 **Arquivos envolvidos:** `dashboard/views.py`, `dashboard/urls.py`
 **Observação:** Reaproveitar o cliente Groq já configurado em `intelligence/views.py`.
-
-### 7. Rate Limiting no Login
-**Descrição:** Prevenir brute force com `django-axes` ou `django-ratelimit`.
-**Arquivos envolvidos:** `core/settings.py`, `requirements.txt`
-**Observação:** README já lista como pendência.
 
 ### 8. Rate Limiting na API Groq
 **Descrição:** Limitar chamadas à API Groq por usuário para controlar custos.
