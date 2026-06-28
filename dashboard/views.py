@@ -14,9 +14,10 @@ from django.db.models.functions import TruncMonth
 @login_required(login_url="/users/login/")
 def home(request):
     transactions = Transaction.objects.filter(user=request.user)
+    today = date.today()
 
-    total_income = transactions.filter(type="receita").aggregate(Sum("amount"))["amount__sum"] or 0
-    total_expense = transactions.filter(type="despesa").aggregate(Sum("amount"))["amount__sum"] or 0
+    total_income = transactions.filter(type="receita", date__lte=today).aggregate(Sum("amount"))["amount__sum"] or 0
+    total_expense = transactions.filter(type="despesa", date__lte=today).aggregate(Sum("amount"))["amount__sum"] or 0
     current_balance = total_income - total_expense
 
     six_months_ago = date.today() - timedelta(days=180)
@@ -50,7 +51,7 @@ def home(request):
         "total_income": total_income,
         "total_expense": total_expense,
         "current_balance": current_balance,
-        "recent_transactions": transactions[:5],
+        "recent_transactions": transactions.filter(date__lte=today)[:5],
         "chart_labels": json.dumps(labels),
         "chart_income": json.dumps(income_data),
         "chart_expense": json.dumps(expense_data),
@@ -60,12 +61,13 @@ def home(request):
 @login_required(login_url="/users/login/")
 def insight_api(request):
     transactions = Transaction.objects.filter(user=request.user)
+    today = date.today()
 
     if not transactions.exists():
         return JsonResponse({"insight": "Registre algumas transações para análise."})
 
-    total_income = transactions.filter(type="receita").aggregate(Sum("amount"))["amount__sum"] or 0
-    total_expense = transactions.filter(type="despesa").aggregate(Sum("amount"))["amount__sum"] or 0
+    total_income = transactions.filter(type="receita", date__lte=today).aggregate(Sum("amount"))["amount__sum"] or 0
+    total_expense = transactions.filter(type="despesa", date__lte=today).aggregate(Sum("amount"))["amount__sum"] or 0
 
     if total_expense > total_income:
         insight = "Atenção: Suas despesas > receitas!"
