@@ -386,6 +386,25 @@
 
 ---
 
+### 25. Correção de regressões na Gestão Financeira
+
+**Data:** Junho 2026
+
+**Problema:** Ao adicionar rotas CSV, a rota `delete-by-type/` foi removida acidentalmente de `finance/urls.py`, quebrando os botões de exclusão em massa no template. A URL de exportação CSV usava `request.GET.urlencode`, propagando parâmetros desnecessários.
+
+**Solução:**
+- Restaurada rota `delete-by-type/` → `finance:delete_by_type`
+- Export CSV passa a repassar apenas filtros ativos (`mes`, `tipo`, `categoria`)
+
+**Arquivos alterados:**
+
+| Arquivo | Mudança |
+|---|---|
+| `finance/urls.py` | Rota `delete-by-type/` restaurada |
+| `templates/finance_list.html` | Link de exportação com filtros explícitos |
+
+---
+
 ## ⏳ A Implementar
 
 ### 9. Insight IA Real no Dashboard

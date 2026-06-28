@@ -6,7 +6,7 @@
 <div class="topbar">
     <h1 class="page-title">Gestão Financeira: {{ request.user.username|title }}</h1>
     <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
-        <a href="{% url 'finance:export_csv' %}?{% if request.GET %}{{ request.GET.urlencode }}{% endif %}" class="btn-primary">
+        <a href="{% url 'finance:export_csv' %}?{% if selected_month %}mes={{ selected_month }}&amp;{% endif %}{% if selected_type %}tipo={{ selected_type }}&amp;{% endif %}{% if selected_category %}categoria={{ selected_category }}&amp;{% endif %}" class="btn-primary">
             <i class="fa-solid fa-file-csv"></i> Exportar CSV
         </a>
         <button type="button" class="btn-primary" id="open-import-modal">
