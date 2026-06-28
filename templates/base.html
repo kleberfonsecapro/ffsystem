@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}SmartFinance AI{% endblock %}</title>
+    <title>{% block title %}Family Finance System AI{% endblock %}</title>
     {% load static %}
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer">
@@ -14,7 +14,7 @@
     <div class="app-layout">
         <aside class="sidebar">
             <div class="brand">
-                <i class="fa-solid fa-chart-pie"></i> SmartFinance AI
+                <i class="fa-solid fa-chart-pie"></i> Family Finance System AI
             </div>
             <ul class="nav-links">
                 <li><a href="{% url 'dashboard:home' %}" class="{% if request.resolver_match.app_name == 'dashboard' %}active{% endif %}">
