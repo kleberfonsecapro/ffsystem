@@ -225,4 +225,13 @@
 
 ---
 
+### 17. Remoção do Card "Agente Financeiro IA" da Gestão Financeira
+**Data:** Junho 2026
+**Problema:** A tela de gestão financeira tinha um grid 2fr 1fr com o card do chat IA ocupando espaço desnecessário, comprimindo a tabela de lançamentos.
+**Solução:** Removido o card do chat IA e seu JavaScript, e o card da tabela de transações agora ocupa 100% da largura disponível.
+**Arquivos envolvidos:**
+- `templates/finance_list.html` — removido grid, coluna do chat, e script JS
+
+---
+
 *Documentado em Junho 2026*
