@@ -147,9 +147,11 @@ body {
 
 .section-title {
     color: var(--accent-blue);
-    font-size: 1rem;
+    font-size: 0.875rem;
     font-weight: 700;
     margin: 0;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
 }
 
 .filter-form {
@@ -163,6 +165,12 @@ body {
 .select-filter {
     min-width: 180px;
     max-width: 220px;
+}
+
+.filter-form .form-control.select-filter {
+    width: auto;
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
 }
 
 .btn-filter {
@@ -192,6 +200,99 @@ body {
 
 .btn-primary:hover {
     opacity: 0.9;
+}
+
+.btn-secondary {
+    background: transparent;
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    padding: 0.6rem 1.2rem;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    font-family: inherit;
+}
+
+.btn-secondary:hover {
+    background: rgba(255, 255, 255, 0.05);
+    border-color: var(--text-secondary);
+}
+
+.topbar-actions-divider {
+    width: 1px;
+    height: 28px;
+    background: var(--border-color);
+    flex-shrink: 0;
+}
+
+.inline-form {
+    display: inline;
+    margin: 0;
+}
+
+.bulk-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    margin-bottom: 1.25rem;
+    background: rgba(239, 68, 68, 0.04);
+    border: 1px solid rgba(239, 68, 68, 0.15);
+    border-radius: 8px;
+}
+
+.bulk-actions-label {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+}
+
+.bulk-actions-label i {
+    color: #f59e0b;
+    font-size: 0.8rem;
+}
+
+.bulk-actions-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.btn-danger-outline {
+    background: transparent;
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    color: var(--accent-red);
+    padding: 0.45rem 0.9rem;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 0.85rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-family: inherit;
+}
+
+.btn-danger-outline:hover {
+    background: rgba(239, 68, 68, 0.12);
+    border-color: var(--accent-red);
+}
+
+.btn-danger-outline:focus-visible {
+    outline: 2px solid rgba(239, 68, 68, 0.45);
+    outline-offset: 2px;
 }
 
 /* Cards */
