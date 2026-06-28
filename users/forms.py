@@ -8,6 +8,11 @@ class CadastroForm(UserCreationForm):
         label="Usuário",
         widget=forms.TextInput(attrs={"class": "form-control", "placeholder": "Escolha um nome de usuário"}),
     )
+    email = forms.EmailField(
+        label="E-mail",
+        required=True,
+        widget=forms.EmailInput(attrs={"class": "form-control", "placeholder": "seu@email.com"}),
+    )
     password1 = forms.CharField(
         label="Senha",
         widget=forms.PasswordInput(attrs={"class": "form-control", "placeholder": "Crie uma senha"}),
@@ -19,7 +24,7 @@ class CadastroForm(UserCreationForm):
 
     class Meta:
         model = User
-        fields = ("username",)
+        fields = ("username", "email")
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -27,6 +32,13 @@ class CadastroForm(UserCreationForm):
             "Sua senha deve conter pelo menos 8 caracteres."
         )
         self.fields["password2"].help_text = ""
+
+    def save(self, commit=True):
+        user = super().save(commit=False)
+        user.email = self.cleaned_data["email"]
+        if commit:
+            user.save()
+        return user
 
 
 class AlterarSenhaForm(PasswordChangeForm):

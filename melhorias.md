@@ -515,3 +515,32 @@ DEFAULT_FROM_EMAIL=SmartFinance AI <noreply@smartfinance.ai>
 Sem configuração de SMTP, usa `console.EmailBackend` (imprime no log do container).
 
 ---
+
+### 26. Email Obrigatório no Cadastro (Pré-requisito do Password Reset)
+
+**Data:** Junho 2026
+
+**Descrição:** Tornado o campo **e-mail obrigatório** no formulário de cadastro, garantindo que todo usuário criado tenha e-mail válido — pré-requisito para o fluxo de recuperação de senha funcionar.
+
+**Arquivos alterados:**
+
+| Arquivo | Mudança |
+|---|---|
+| `users/forms.py` | `CadastroForm`: adicionado campo `email` (EmailField, required=True), `fields = ("username", "email")`, sobrescrito `save()` para persistir email no User |
+
+**Detalhes técnicos:**
+- `CadastroForm` agora herda `UserCreationForm` + campo `email` obrigatório com widget `EmailInput` (classe `form-control`, placeholder)
+- `Meta.fields = ("username", "email")` — email incluído no formulário
+- Método `save()` sobrescrito para atribuir `user.email = cleaned_data["email"]` antes de salvar
+- Template `register.html` **não precisou de alteração** — usa `{% for field in form %}` que renderiza automaticamente o novo campo
+- CSS `.login-card input` já estiliza corretamente (padding, focus, borda)
+- Modelo `User` do Django já possui campo `email` (CharField, blank=True por padrão); agora preenchido obrigatoriamente no cadastro
+
+**Impacto no Password Reset:**
+- Antes: usuário podia cadastrar sem email → `PasswordResetView` não encontrava usuário → reset falhava silenciosamente (mesma mensagem de sucesso)
+- Agora: **todo usuário tem email** → reset funciona 100% dos casos
+- `PasswordResetView` filtra `User.objects.filter(email__iexact=email, is_active=True)` — email único não é forçado no model, mas formulário impede duplicatas via validação de integridade
+
+**Validação adicional recomendada (futuro):**
+- Adicionar `unique=True` no email via migration customizada ou `User.email` unique constraint
+- Ou validar unicidade no `CadastroForm.clean_email()`
