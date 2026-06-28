@@ -75,49 +75,73 @@
 
 ---
 
+### 4. Agrupamento Mensal e Gráfico de Fluxo Receita/Despesa
+
+**Data:** Junho 2026
+
+**Descrição:** Listagem de transações agora agrupada por mês com subtotais, filtro por mês, e gráfico de linha no dashboard mostrando receitas e despesas dos últimos 6 meses.
+
+**Arquivos alterados:**
+
+| Arquivo | Mudança |
+|---|---|
+| `finance/views.py` | View `finance_list` agora agrupa por mês com `grouped_transactions`, filtro `?mes=` e subtotais |
+| `templates/finance_list.html` | Tabela com cabeçalhos de mês, subtotais de receitas/despesas e seletor de filtro |
+| `dashboard/views.py` | View `home` calcula receitas/despesas mensais dos últimos 6 meses (`chart_labels`, `chart_income`, `chart_expense`) |
+| `templates/dashboard.html` | Gráfico de linha com 2 séries (Receitas verde, Despesas vermelha) e labels dinâmicos |
+
+**Detalhes técnicos:**
+- Listagem usa `TruncMonth` do Django para listar meses disponíveis no filtro
+- Agrupamento feito em Python com dict de grupos por `YYYY-MM`
+- Cada grupo exibe subtotal de receitas e despesas do mês
+- Gráfico do dashboard mostra 6 meses com dados reais (não mais dados fictícios)
+- Eixo X com abreviações dos meses (`month_abbr`)
+
+---
+
 ## Pendências (não implementadas)
 
-### 4. Categorias Personalizadas
+### 5. Categorias Personalizadas
 **Descrição:** Permitir que o usuário crie suas próprias categorias em vez de usar as 8 fixas no model.
 **Arquivos envolvidos:** `finance/models.py` (novo model `Category`), `finance/forms.py`, migrações
 **Observação:** Model `Transaction.category` mudaria de `CharField` para `ForeignKey` para `Category`.
 
-### 5. Filtros na Listagem
-**Descrição:** Adicionar filtros por tipo (receita/despesa), data e categoria na página de listagem.
+### 6. Filtros na Listagem
+**Descrição:** Adicionar filtros por tipo (receita/despesa) e categoria na página de listagem (filtro por mês já implementado).
 **Arquivos envolvidos:** `finance/views.py`, `templates/finance_list.html`
 **Observação:** Usar `django-filter` ou filtro manual via `request.GET`.
 
-### 6. Exportar Transações (CSV)
+### 7. Exportar Transações (CSV)
 **Descrição:** Botão para exportar as transações do usuário em formato CSV.
 **Arquivos envolvidos:** `finance/views.py`, `finance/urls.py`, `templates/finance_list.html`
 **Observação:** Usar `csv` module do Python ou `HttpResponse` com `content_type=text/csv`.
 
-### 7. Insight IA Real no Dashboard
+### 8. Insight IA Real no Dashboard
 **Descrição:** Substituir a regra simples de comparação receita/despesa por uma chamada real à Groq para gerar análise financeira contextual.
 **Arquivos envolvidos:** `dashboard/views.py`, `dashboard/urls.py`
 **Observação:** Reaproveitar o cliente Groq já configurado em `intelligence/views.py`.
 
-### 8. Rate Limiting na API Groq
+### 9. Rate Limiting na API Groq
 **Descrição:** Limitar chamadas à API Groq por usuário para controlar custos.
 **Arquivos envolvidos:** `intelligence/views.py`
 **Observação:** README já lista como pendência.
 
-### 9. Password Reset (Esqueci Minha Senha)
+### 10. Password Reset (Esqueci Minha Senha)
 **Descrição:** Fluxo completo de recuperação de senha por email.
 **Arquivos envolvidos:** `core/urls.py`, `templates/`, `core/settings.py`
 **Observação:** Django já fornece `django.contrib.auth.views.PasswordResetView`.
 
-### 10. Testes Unitários e de Integração
+### 11. Testes Unitários e de Integração
 **Descrição:** Cobrir models, views e a integração com Groq com testes.
 **Arquivos envolvidos:** `finance/tests.py`, `intelligence/tests.py`, `dashboard/tests.py`, `users/tests.py`
 **Observação:** README lista cobertura atual em 0%.
 
-### 11. Bundle Local do Chart.js
+### 12. Bundle Local do Chart.js
 **Descrição:** Substituir CDN do Chart.js por bundle local (elimina dependência externa).
 **Arquivos envolvidos:** `templates/base.html`, `static/js/`
 **Observação:** README já lista como pendência.
 
-### 12. Migrar psycopg2-binary para psycopg2
+### 13. Migrar psycopg2-binary para psycopg2
 **Descrição:** Substituir `psycopg2-binary` por `psycopg2` em produção (boas práticas).
 **Arquivos envolvidos:** `requirements.txt`, `Dockerfile`
 **Observação:** README já lista como pendência.

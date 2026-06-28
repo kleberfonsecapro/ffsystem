@@ -6,6 +6,9 @@ from django.contrib import messages
 from django.http import JsonResponse
 from finance.models import Transaction
 from django.db.models import Sum
+from django.db.models.functions import TruncMonth
+from datetime import date, timedelta
+from calendar import month_abbr
 
 @login_required(login_url="/users/login/")
 def home(request):
@@ -15,11 +18,41 @@ def home(request):
     total_expense = transactions.filter(type="despesa").aggregate(Sum("amount"))["amount__sum"] or 0
     current_balance = total_income - total_expense
 
+    six_months_ago = date.today() - timedelta(days=180)
+    monthly = (
+        transactions.filter(date__gte=six_months_ago)
+        .annotate(month=TruncMonth("date"))
+        .values("month", "type")
+        .annotate(total=Sum("amount"))
+        .order_by("month")
+    )
+
+    chart_data = {}
+    for entry in monthly:
+        key = entry["month"].strftime("%Y-%m")
+        if key not in chart_data:
+            chart_data[key] = {"income": 0, "expense": 0}
+        chart_data[key][entry["type"]] = entry["total"]
+
+    labels = []
+    income_data = []
+    expense_data = []
+    for i in range(5, -1, -1):
+        dt = date.today().replace(day=1) - timedelta(days=30 * i)
+        key = dt.strftime("%Y-%m")
+        labels.append(month_abbr[dt.month])
+        d = chart_data.get(key, {"income": 0, "expense": 0})
+        income_data.append(float(d["income"]))
+        expense_data.append(float(d["expense"]))
+
     context = {
         "total_income": total_income,
         "total_expense": total_expense,
         "current_balance": current_balance,
         "recent_transactions": transactions[:5],
+        "chart_labels": labels,
+        "chart_income": income_data,
+        "chart_expense": expense_data,
     }
     return render(request, "dashboard.html", context)
 

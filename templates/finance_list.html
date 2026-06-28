@@ -13,69 +13,80 @@
 <div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; align-items: start; margin-bottom: 2rem;">
     <!-- Coluna da Esquerda: Tabela -->
     <div class="card" style="overflow-x: auto;">
-        <h3 style="margin-bottom: 1.5rem; color: var(--text-secondary); font-size: 0.9rem;">CONTAS DA FAMÍLIA</h3>
-        <h3 style="margin-bottom: 1rem;">Últimas Transações da Família</h3>
-        <table>
-            <thead>
-                <tr>
-                    <th>Data</th>
-                    <th>Descrição</th>
-                    <th>Categoria</th>
-                    <th>Tipo</th>
-                    <th>Valor</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for tx in page_obj %}
-                <tr>
-                    <td>{{ tx.date|date:"d M Y" }}</td>
-                    <td style="font-weight: 500;">{{ tx.description }}</td>
-                    <td>{{ tx.category }}</td>
-                    <td>
-                        {% if tx.type == 'receita' %}
-                            <span class="badge badge-income">Receita</span>
-                        {% else %}
-                            <span class="badge badge-expense">Despesa</span>
-                        {% endif %}
-                    </td>
-                    <td class="{% if tx.type == 'receita' %}text-green{% else %}text-red{% endif %}" style="font-weight: 600;">
-                        R$ {{ tx.amount|floatformat:2 }}
-                    </td>
-                    <td>
-                        <div style="display: flex; gap: 0.5rem; align-items: center;">
-                            <a href="{% url 'finance:edit' tx.pk %}" class="btn-edit" title="Editar">
-                                <i class="fa-solid fa-pen-to-square"></i>
-                            </a>
-                            <form method="POST" action="{% url 'finance:delete' tx.pk %}" onsubmit="return confirm('Tem certeza que deseja excluir esta transação?')">
-                                {% csrf_token %}
-                                <button type="submit" class="btn-delete" title="Excluir">
-                                    <i class="fa-solid fa-trash-can"></i>
-                                </button>
-                            </form>
-                        </div>
-                    </td>
-                </tr>
-                {% empty %}
-                <tr>
-                    <td colspan="6" style="text-align: center; color: var(--text-secondary);">Nenhuma transação registrada ainda.</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-        {% if page_obj.has_other_pages %}
-        <div style="display: flex; justify-content: center; gap: 0.5rem; margin-top: 1rem;">
-            {% if page_obj.has_previous %}
-                <a href="?page={{ page_obj.previous_page_number }}" class="btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">Anterior</a>
-            {% endif %}
-            <span style="display: flex; align-items: center; color: var(--text-secondary); font-size: 0.85rem;">
-                Página {{ page_obj.number }} de {{ page_obj.paginator.num_pages }}
-            </span>
-            {% if page_obj.has_next %}
-                <a href="?page={{ page_obj.next_page_number }}" class="btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">Próximo</a>
-            {% endif %}
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+            <h3 style="color: var(--text-secondary); font-size: 0.9rem;">CONTAS DA FAMÍLIA</h3>
+            <form method="GET" style="display: flex; gap: 0.5rem; align-items: center;">
+                <select name="mes" style="background: var(--bg-main); color: var(--text-primary); border: 1px solid var(--border-color); padding: 0.4rem 0.6rem; border-radius: 6px; font-size: 0.85rem;">
+                    <option value="">Todos os meses</option>
+                    {% for m in months_available %}
+                    <option value="{{ m|date:'Y-m' }}" {% if selected_month == m|date:'Y-m' %}selected{% endif %}>
+                        {{ m|date:'F Y' }}
+                    </option>
+                    {% endfor %}
+                </select>
+                <button type="submit" class="btn-primary" style="padding: 0.4rem 0.8rem; font-size: 0.85rem;">Filtrar</button>
+            </form>
         </div>
-        {% endif %}
+
+        {% for group in grouped_transactions %}
+        <div style="margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 2px solid var(--border-color); margin-bottom: 0.5rem;">
+                <h4 style="color: var(--accent-blue); font-size: 1rem; font-weight: 600;">{{ group.month|date:"F Y" }}</h4>
+                <div style="display: flex; gap: 1rem; font-size: 0.85rem;">
+                    <span style="color: var(--accent-green);">Receitas: R$ {{ group.income|floatformat:2 }}</span>
+                    <span style="color: var(--accent-red);">Despesas: R$ {{ group.expense|floatformat:2 }}</span>
+                </div>
+            </div>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Descrição</th>
+                        <th>Categoria</th>
+                        <th>Tipo</th>
+                        <th>Valor</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tx in group.transactions %}
+                    <tr>
+                        <td>{{ tx.date|date:"d M Y" }}</td>
+                        <td style="font-weight: 500;">{{ tx.description }}</td>
+                        <td>{{ tx.category }}</td>
+                        <td>
+                            {% if tx.type == 'receita' %}
+                                <span class="badge badge-income">Receita</span>
+                            {% else %}
+                                <span class="badge badge-expense">Despesa</span>
+                            {% endif %}
+                        </td>
+                        <td class="{% if tx.type == 'receita' %}text-green{% else %}text-red{% endif %}" style="font-weight: 600;">
+                            R$ {{ tx.amount|floatformat:2 }}
+                        </td>
+                        <td>
+                            <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <a href="{% url 'finance:edit' tx.pk %}" class="btn-edit" title="Editar">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </a>
+                                <form method="POST" action="{% url 'finance:delete' tx.pk %}" onsubmit="return confirm('Tem certeza que deseja excluir esta transação?')">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-delete" title="Excluir">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% empty %}
+        <div style="text-align: center; color: var(--text-secondary); padding: 2rem;">
+            Nenhuma transação encontrada.
+        </div>
+        {% endfor %}
     </div>
 
     <!-- Coluna da Direita: Chat IA -->

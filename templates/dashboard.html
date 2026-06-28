@@ -54,18 +54,28 @@
     new Chart(ctxFlow, {
         type: 'line',
         data: {
-            labels: ['Jan', 'Fev', 'Mar', 'Abr', 'Mai'],
-            datasets: [{
-                label: 'Saldo',
-                data: [0, 0, 0, 0, {{ current_balance|stringformat:"f" }}],
-                borderColor: '#10b981',
-                tension: 0.4,
-                fill: true,
-                backgroundColor: 'rgba(16, 185, 129, 0.1)'
-            }]
+            labels: {{ chart_labels|safe }},
+            datasets: [
+                {
+                    label: 'Receitas',
+                    data: {{ chart_income|safe }},
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                },
+                {
+                    label: 'Despesas',
+                    data: {{ chart_expense|safe }},
+                    borderColor: '#ef4444',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }
+            ]
         },
         options: {
-            plugins: { legend: { display: false } },
+            plugins: { legend: { labels: { color: '#fff' } } },
             scales: { y: { beginAtZero: true, grid: { color: '#2a2a35' } }, x: { grid: { color: '#2a2a35' } } }
         }
     });
