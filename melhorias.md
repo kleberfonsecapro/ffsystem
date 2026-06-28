@@ -224,6 +224,30 @@
 
 ---
 
+### 19. Cards de Receitas e Despesas do Próximo Mês no Dashboard
+
+**Data:** Junho 2026
+
+**Problema:** O dashboard mostrava apenas os valores do mês corrente. Com receitas e despesas futuras (ex: salários de julho), o usuário não tinha visibilidade do próximo mês sem acessar a listagem.
+
+**Solução:** Adicionados 2 novos cards no dashboard exibindo a soma de receitas e despesas do mês seguinte ao corrente. Cada card mostra o nome do mês (ex: "Julho") dinamicamente.
+
+**Arquivos alterados:**
+
+| Arquivo | Mudança |
+|---|---|
+| `dashboard/views.py` | Cálculo de `next_month_start`, `next_month_end`, queries `next_income`/`next_expense`, e nome do mês `next_month_name` |
+| `templates/dashboard.html` | 2 novos cards "Receitas (Julho)" e "Despesas (Julho)" com bordas amarela/laranja |
+
+**Detalhes técnicos:**
+- `next_month_start = month_start + relativedelta(months=1)` — primeiro dia do mês seguinte
+- `next_month_end = next_month_start + relativedelta(months=1) - timedelta(days=1)` — último dia do mês seguinte
+- `next_month_name = MESES_PT[next_month_start.month]` — nome do mês em português (ex: "Julho") via lista `MESES_PT`
+- Queries filtradas por `date__gte=next_month_start, date__lte=next_month_end`
+- Usa `dateutil.relativedelta` já disponível no projeto
+
+---
+
 ## ⏳ A Implementar
 
 ### 6. Categorias Personalizadas

@@ -21,20 +21,28 @@
 
 <div class="grid-metrics">
     <div class="card metric-card">
-        <span class="metric-title">Saldo Atual</span>
+        <span class="metric-title">Saldo (mês)</span>
         <span class="metric-value">R$ {{ current_balance|floatformat:2 }}</span>
     </div>
     <div class="card metric-card">
-        <span class="metric-title">Receitas</span>
+        <span class="metric-title">Receitas (mês)</span>
         <span class="metric-value text-green">R$ {{ total_income|floatformat:2 }}</span>
     </div>
     <div class="card metric-card">
-        <span class="metric-title">Despesas</span>
+        <span class="metric-title">Despesas (mês)</span>
         <span class="metric-value text-red">R$ {{ total_expense|floatformat:2 }}</span>
     </div>
     <div class="card metric-card" style="border-color: var(--accent-blue);">
         <span class="metric-title" style="color: var(--accent-blue);"><i class="fa-solid fa-wand-magic-sparkles"></i> Insight da IA</span>
         <span class="metric-value" style="font-size: 1rem; font-weight: 500; margin-top: 0.5rem; line-height: 1.4;" id="ai-insight">Analisando suas finanças...</span>
+    </div>
+    <div class="card metric-card" style="border-color: #fbbf24;">
+        <span class="metric-title" style="color: #fbbf24;">Receitas ({{ next_month_name }})</span>
+        <span class="metric-value text-green">R$ {{ next_income|floatformat:2 }}</span>
+    </div>
+    <div class="card metric-card" style="border-color: #f97316;">
+        <span class="metric-title" style="color: #f97316;">Despesas ({{ next_month_name }})</span>
+        <span class="metric-value text-red">R$ {{ next_expense|floatformat:2 }}</span>
     </div>
 </div>
 

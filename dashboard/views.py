@@ -1,6 +1,12 @@
 import json
 from datetime import date, timedelta
 from calendar import month_abbr
+from dateutil.relativedelta import relativedelta
+
+MESES_PT = [
+    "", "Janeiro", "Fevereiro", "Março", "Abril", "Maio", "Junho",
+    "Julho", "Agosto", "Setembro", "Outubro", "Novembro", "Dezembro",
+]
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import PasswordChangeForm
@@ -16,9 +22,16 @@ def home(request):
     transactions = Transaction.objects.filter(user=request.user)
     today = date.today()
 
-    total_income = transactions.filter(type="receita").aggregate(Sum("amount"))["amount__sum"] or 0
-    total_expense = transactions.filter(type="despesa", date__lte=today).aggregate(Sum("amount"))["amount__sum"] or 0
-    current_balance = total_income - total_expense
+    month_start = today.replace(day=1)
+    month_income = transactions.filter(type="receita", date__gte=month_start, date__lte=today).aggregate(Sum("amount"))["amount__sum"] or 0
+    month_expense = transactions.filter(type="despesa", date__gte=month_start, date__lte=today).aggregate(Sum("amount"))["amount__sum"] or 0
+    current_balance = month_income - month_expense
+
+    next_month_start = month_start + relativedelta(months=1)
+    next_month_end = next_month_start + relativedelta(months=1) - timedelta(days=1)
+    next_income = transactions.filter(type="receita", date__gte=next_month_start, date__lte=next_month_end).aggregate(Sum("amount"))["amount__sum"] or 0
+    next_expense = transactions.filter(type="despesa", date__gte=next_month_start, date__lte=next_month_end).aggregate(Sum("amount"))["amount__sum"] or 0
+    next_month_name = MESES_PT[next_month_start.month]
 
     six_months_ago = date.today() - timedelta(days=180)
     monthly = (
@@ -48,9 +61,12 @@ def home(request):
         expense_data.append(float(d["expense"]))
 
     context = {
-        "total_income": total_income,
-        "total_expense": total_expense,
+        "total_income": month_income,
+        "total_expense": month_expense,
         "current_balance": current_balance,
+        "next_income": next_income,
+        "next_expense": next_expense,
+        "next_month_name": next_month_name,
         "recent_transactions": transactions[:5],
         "chart_labels": json.dumps(labels),
         "chart_income": json.dumps(income_data),
@@ -66,16 +82,17 @@ def insight_api(request):
     if not transactions.exists():
         return JsonResponse({"insight": "Registre algumas transações para análise."})
 
-    total_income = transactions.filter(type="receita").aggregate(Sum("amount"))["amount__sum"] or 0
-    total_expense = transactions.filter(type="despesa", date__lte=today).aggregate(Sum("amount"))["amount__sum"] or 0
+    month_start = today.replace(day=1)
+    month_income = transactions.filter(type="receita", date__gte=month_start, date__lte=today).aggregate(Sum("amount"))["amount__sum"] or 0
+    month_expense = transactions.filter(type="despesa", date__gte=month_start, date__lte=today).aggregate(Sum("amount"))["amount__sum"] or 0
 
-    if total_expense > total_income:
-        insight = "Atenção: Suas despesas > receitas!"
-    elif total_expense > 0:
-        pct = (total_expense / total_income) * 100 if total_income > 0 else 100
-        insight = f"Você gastou {pct:.1f}% das receitas."
+    if month_expense > month_income:
+        insight = "Atenção: Suas despesas > receitas do mês!"
+    elif month_expense > 0:
+        pct = (month_expense / month_income) * 100 if month_income > 0 else 100
+        insight = f"Você gastou {pct:.1f}% das receitas do mês."
     else:
-        insight = "Sem despesas registradas!"
+        insight = "Sem despesas registradas este mês!"
 
     return JsonResponse({"insight": insight})
 
