@@ -1,6 +1,6 @@
-# Melhorias Implementadas
+# Melhorias
 
-## Dezembro 2024
+## ✅ Implementado
 
 ### 1. Deleção de Transações
 
@@ -27,7 +27,6 @@
 **Impacto nos gráficos:** Automático — o dashboard e insight já consultam o banco a cada requisição, refletindo a deleção imediatamente.
 
 ---
-✅ **Implementado**
 
 ### 2. Rate Limiting no Login
 
@@ -50,7 +49,6 @@
 - Comando `manage.py axes_reset` para desbloqueio manual
 
 ---
-✅ **Implementado**
 
 ### 3. Editar Transações
 
@@ -76,7 +74,6 @@
 - Redireciona para a lista de transações após salvar
 
 ---
-✅ **Implementado**
 
 ### 4. Agrupamento Mensal e Gráfico de Fluxo Receita/Despesa
 
@@ -101,7 +98,6 @@
 - Eixo X com abreviações dos meses (`month_abbr`)
 
 ---
-✅ **Implementado**
 
 ### 5. Transações Parceladas
 
@@ -139,7 +135,6 @@
 - Dashboard reflete corretamente: total geral soma todas as parcelas, gráfico mensal mostra apenas a parcela do mês
 
 ---
-✅ **Implementado**
 
 ### 6. Correção: Serialização do Gráfico de Fluxo de Caixa
 
@@ -159,7 +154,6 @@
 - `json.dumps()` garante serialização correta de strings, números e booleanos
 
 ---
-✅ **Implementado**
 
 ### 7. Correção: Valores Não Divisíveis em Parcelamento
 
@@ -185,87 +179,28 @@
 
 ---
 
-## Pendências (não implementadas)
-
-⏳ **Pendente**
-
-### 6. Categorias Personalizadas
-**Descrição:** Permitir que o usuário crie suas próprias categorias em vez de usar as 8 fixas no model.
-**Arquivos envolvidos:** `finance/models.py` (novo model `Category`), `finance/forms.py`, migrações
-**Observação:** Model `Transaction.category` mudaria de `CharField` para `ForeignKey` para `Category`.
-
-⏳ **Pendente**
-
-### 7. Filtros na Listagem
-**Descrição:** Adicionar filtros por tipo (receita/despesa) e categoria na página de listagem (filtro por mês já implementado).
-**Arquivos envolvidos:** `finance/views.py`, `templates/finance_list.html`
-**Observação:** Usar `django-filter` ou filtro manual via `request.GET`.
-
-⏳ **Pendente**
-
-### 8. Exportar Transações (CSV)
-**Descrição:** Botão para exportar as transações do usuário em formato CSV.
-**Arquivos envolvidos:** `finance/views.py`, `finance/urls.py`, `templates/finance_list.html`
-**Observação:** Usar `csv` module do Python ou `HttpResponse` com `content_type=text/csv`.
-
-⏳ **Pendente**
-
-### 9. Insight IA Real no Dashboard
-**Descrição:** Substituir a regra simples de comparação receita/despesa por uma chamada real à Groq para gerar análise financeira contextual.
-**Arquivos envolvidos:** `dashboard/views.py`, `dashboard/urls.py`
-**Observação:** Reaproveitar o cliente Groq já configurado em `intelligence/views.py`.
-
-⏳ **Pendente**
-
-### 10. Rate Limiting na API Groq
-**Descrição:** Limitar chamadas à API Groq por usuário para controlar custos.
-**Arquivos envolvidos:** `intelligence/views.py`
-**Observação:** README já lista como pendência.
-
-⏳ **Pendente**
-
-### 11. Password Reset (Esqueci Minha Senha)
-**Descrição:** Fluxo completo de recuperação de senha por email.
-**Arquivos envolvidos:** `core/urls.py`, `templates/`, `core/settings.py`
-**Observação:** Django já fornece `django.contrib.auth.views.PasswordResetView`.
-
-⏳ **Pendente**
-
-### 12. Testes Unitários e de Integração
-**Descrição:** Cobrir models, views e a integração com Groq com testes.
-**Arquivos envolvidos:** `finance/tests.py`, `intelligence/tests.py`, `dashboard/tests.py`, `users/tests.py`
-**Observação:** README lista cobertura atual em 0%.
-
-⏳ **Pendente**
-
-### 13. Bundle Local do Chart.js
-**Descrição:** Substituir CDN do Chart.js por bundle local (elimina dependência externa).
-**Arquivos envolvidos:** `templates/base.html`, `static/js/`
-**Observação:** README já lista como pendência.
-
-⏳ **Pendente**
-
-### 14. Migrar psycopg2-binary para psycopg2
-**Descrição:** Substituir `psycopg2-binary` por `psycopg2` em produção (boas práticas).
-**Arquivos envolvidos:** `requirements.txt`, `Dockerfile`
-**Observação:** README já lista como pendência.
-
-✅ **Implementado**
-
 ### 15. Filtro date__lte no Dashboard para Excluir Parcelas Futuras
+
 **Data:** Junho 2026
+
 **Problema:** Dashboard somava transações de todos os tempos, incluindo parcelas futuras. Ex: geladeira de R$ 1.949,02 em 10x aparecia como despesa total de R$ 1.949,02, confundindo o saldo atual.
+
 **Solução:** Adicionar `date__lte=today` APENAS em `total_expense`. A receita (`total_income`) e `recent_transactions` não têm filtro de data — toda receita cadastrada (inclusive salário futuro) aparece no total. Motivo: o usuário espera ver toda a receita prevista, mas apenas despesas já vencidas.
+
 **Arquivos envolvidos:** `dashboard/views.py`
+
 **Observação:** O gráfico mensal (últimos 6 meses) e a listagem por mês não foram alterados. O insight API seguiu a mesma lógica: receita total, despesa com date__lte.
 
 ---
-✅ **Implementado**
 
 ### 16. Status "Paga" para Transações
+
 **Data:** Junho 2026
+
 **Problema:** Não era possível marcar uma despesa como paga, dificultando o controle do que já foi quitado.
+
 **Solução:** Adicionado campo booleano `paid` ao model `Transaction`. Na listagem, cada transação tem um botão verde (✓) para marcar como paga / desmarcar. Transações pagas aparecem com opacidade reduzida, descrição tachada, e badge "Paga" no lugar do tipo. O botão de toggle é um POST (segue o padrão de delete).
+
 **Arquivos envolvidos:**
 - `finance/models.py` — campo `paid = BooleanField(default=False)`
 - `finance/migrations/0002_transaction_installment_group_and_more.py` — migração com o novo campo
@@ -275,28 +210,76 @@
 - `static/css/style.css` — classes `.btn-paid`, `.paid-row`, `.badge-paid`, `.text-paid`
 
 ---
-⏳ **Pendente**
 
-### 19. Histórico de Conversas com IA no Banco (Pendente)
-**Descrição:** Criar model `ConversationHistory` para armazenar as conversas do usuário com a IA (mensagens e respostas compactadas). Manter por 7 dias, com deleção automática via cron/management command. A IA poderá recuperar o histórico quando o usuário pedir para "relembrar toda a conversa".
-**Arquivos envolvidos:** `intelligence/models.py`, `intelligence/management/commands/`, `core/settings.py`
-**Observação:** Compactar mensagens antes de salvar (ex: zlib/gzip no campo TextField/ BinaryField). O comando de limpeza pode rodar via cron no docker ou como task periódica.
+### 17. Remoção do Card "Agente Financeiro IA" da Gestão Financeira
 
-⏳ **Pendente**
+**Data:** Junho 2026
 
-### 18. Botão IA Flutuante na Gestão Financeira (Pendente)
+**Problema:** A tela de gestão financeira tinha um grid 2fr 1fr com o card do chat IA ocupando espaço desnecessário, comprimindo a tabela de lançamentos.
+
+**Solução:** Removido o card do chat IA e seu JavaScript, e o card da tabela de transações agora ocupa 100% da largura disponível.
+
+**Arquivos envolvidos:**
+- `templates/finance_list.html` — removido grid, coluna do chat, e script JS
+
+---
+
+## ⏳ A Implementar
+
+### 6. Categorias Personalizadas
+**Descrição:** Permitir que o usuário crie suas próprias categorias em vez de usar as 8 fixas no model.
+**Arquivos envolvidos:** `finance/models.py` (novo model `Category`), `finance/forms.py`, migrações
+**Observação:** Model `Transaction.category` mudaria de `CharField` para `ForeignKey` para `Category`.
+
+### 7. Filtros na Listagem
+**Descrição:** Adicionar filtros por tipo (receita/despesa) e categoria na página de listagem (filtro por mês já implementado).
+**Arquivos envolvidos:** `finance/views.py`, `templates/finance_list.html`
+**Observação:** Usar `django-filter` ou filtro manual via `request.GET`.
+
+### 8. Exportar Transações (CSV)
+**Descrição:** Botão para exportar as transações do usuário em formato CSV.
+**Arquivos envolvidos:** `finance/views.py`, `finance/urls.py`, `templates/finance_list.html`
+**Observação:** Usar `csv` module do Python ou `HttpResponse` com `content_type=text/csv`.
+
+### 9. Insight IA Real no Dashboard
+**Descrição:** Substituir a regra simples de comparação receita/despesa por uma chamada real à Groq para gerar análise financeira contextual.
+**Arquivos envolvidos:** `dashboard/views.py`, `dashboard/urls.py`
+**Observação:** Reaproveitar o cliente Groq já configurado em `intelligence/views.py`.
+
+### 10. Rate Limiting na API Groq
+**Descrição:** Limitar chamadas à API Groq por usuário para controlar custos.
+**Arquivos envolvidos:** `intelligence/views.py`
+**Observação:** README já lista como pendência.
+
+### 11. Password Reset (Esqueci Minha Senha)
+**Descrição:** Fluxo completo de recuperação de senha por email.
+**Arquivos envolvidos:** `core/urls.py`, `templates/`, `core/settings.py`
+**Observação:** Django já fornece `django.contrib.auth.views.PasswordResetView`.
+
+### 12. Testes Unitários e de Integração
+**Descrição:** Cobrir models, views e a integração com Groq com testes.
+**Arquivos envolvidos:** `finance/tests.py`, `intelligence/tests.py`, `dashboard/tests.py`, `users/tests.py`
+**Observação:** README lista cobertura atual em 0%.
+
+### 13. Bundle Local do Chart.js
+**Descrição:** Substituir CDN do Chart.js por bundle local (elimina dependência externa).
+**Arquivos envolvidos:** `templates/base.html`, `static/js/`
+**Observação:** README já lista como pendência.
+
+### 14. Migrar psycopg2-binary para psycopg2
+**Descrição:** Substituir `psycopg2-binary` por `psycopg2` em produção (boas práticas).
+**Arquivos envolvidos:** `requirements.txt`, `Dockerfile`
+**Observação:** README já lista como pendência.
+
+### 18. Botão IA Flutuante na Gestão Financeira
 **Descrição:** Adicionar um botão "IA" ao lado de "Nova Transação" na página de gestão financeira. Ao clicar, abre um chat flutuante (modal/overlay) para conversar com o assistente IA, sem ocupar espaço fixo na tela.
 **Arquivos envolvidos:** `templates/finance_list.html`, `static/css/style.css`, `static/js/chat.js`
 **Observação:** O chat fixo foi removido na melhoria #17; esta é a substituição planejada.
 
-✅ **Implementado**
-
-### 17. Remoção do Card "Agente Financeiro IA" da Gestão Financeira
-**Data:** Junho 2026
-**Problema:** A tela de gestão financeira tinha um grid 2fr 1fr com o card do chat IA ocupando espaço desnecessário, comprimindo a tabela de lançamentos.
-**Solução:** Removido o card do chat IA e seu JavaScript, e o card da tabela de transações agora ocupa 100% da largura disponível.
-**Arquivos envolvidos:**
-- `templates/finance_list.html` — removido grid, coluna do chat, e script JS
+### 19. Histórico de Conversas com IA no Banco
+**Descrição:** Criar model `ConversationHistory` para armazenar as conversas do usuário com a IA (mensagens e respostas compactadas). Manter por 7 dias, com deleção automática via cron/management command. A IA poderá recuperar o histórico quando o usuário pedir para "relembrar toda a conversa".
+**Arquivos envolvidos:** `intelligence/models.py`, `intelligence/management/commands/`, `core/settings.py`
+**Observação:** Compactar mensagens antes de salvar (ex: zlib/gzip no campo TextField/ BinaryField). O comando de limpeza pode rodar via cron no docker ou como task periódica.
 
 ---
 
