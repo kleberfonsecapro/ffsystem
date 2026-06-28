@@ -225,6 +225,11 @@
 
 ---
 
+### 18. Botão IA Flutuante na Gestão Financeira (Pendente)
+**Descrição:** Adicionar um botão "IA" ao lado de "Nova Transação" na página de gestão financeira. Ao clicar, abre um chat flutuante (modal/overlay) para conversar com o assistente IA, sem ocupar espaço fixo na tela.
+**Arquivos envolvidos:** `templates/finance_list.html`, `static/css/style.css`, `static/js/chat.js`
+**Observação:** O chat fixo foi removido na melhoria #17; esta é a substituição planejada.
+
 ### 17. Remoção do Card "Agente Financeiro IA" da Gestão Financeira
 **Data:** Junho 2026
 **Problema:** A tela de gestão financeira tinha um grid 2fr 1fr com o card do chat IA ocupando espaço desnecessário, comprimindo a tabela de lançamentos.
