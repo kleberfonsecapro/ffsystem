@@ -134,6 +134,25 @@
 
 ---
 
+### 6. Correção: Serialização do Gráfico de Fluxo de Caixa
+
+**Data:** Junho 2026
+
+**Descrição:** Gráfico de linha do dashboard parou de funcionar após a implementação do agrupamento mensal. O problema era que os dados eram passados como listas Python e renderizadas com `|safe`, gerando JavaScript inválido (aspas simples do Python em vez de JSON).
+
+**Arquivos alterados:**
+
+| Arquivo | Mudança |
+|---|---|
+| `dashboard/views.py` | `chart_labels`, `chart_income` e `chart_expense` passam por `json.dumps()` antes de ir ao template |
+
+**Detalhes técnicos:**
+- Antes: `{{ chart_labels|safe }}` → `['Jan', 'Fev', ...]` (aspas simples, inválido como JSON)
+- Depois: `json.dumps(labels)` → `["Jan", "Fev", ...]` (JSON válido)
+- `json.dumps()` garante serialização correta de strings, números e booleanos
+
+---
+
 ## Pendências (não implementadas)
 
 ### 6. Categorias Personalizadas
