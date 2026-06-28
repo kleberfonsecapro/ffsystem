@@ -5,9 +5,17 @@
 {% block content %}
 <div class="topbar">
     <h1 class="page-title">Gestão Financeira: {{ request.user.username|title }}</h1>
-    <a href="{% url 'finance:add' %}" class="btn-primary">
-        <i class="fa-solid fa-plus"></i> Nova Transação
-    </a>
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center;">
+        <a href="{% url 'finance:export_csv' %}{% if request.GET %}?{{ request.GET.urlencode }}{% endif %}" class="btn-primary">
+            <i class="fa-solid fa-file-csv"></i> Exportar CSV
+        </a>
+        <button type="button" class="btn-primary" id="open-import-modal">
+            <i class="fa-solid fa-file-arrow-up"></i> Importar CSV
+        </button>
+        <a href="{% url 'finance:add' %}" class="btn-primary">
+            <i class="fa-solid fa-plus"></i> Nova Transação
+        </a>
+    </div>
 </div>
 
 <div class="card" style="overflow-x: auto;">
@@ -121,4 +129,45 @@
     </div>
     {% endfor %}
 </div>
+
+<div id="import-modal" style="display:none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 999; align-items: center; justify-content: center; padding: 1rem;">
+    <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; max-width: 520px; width: 100%; padding: 1.5rem; box-shadow: 0 20px 50px rgba(0,0,0,0.35); position: relative;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; gap: 1rem;">
+            <div>
+                <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.25rem;">Importar Transações CSV</h3>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0;">Use um arquivo CSV com delimitador ponto e vírgula e cabeçalho obrigatório.</p>
+            </div>
+            <button type="button" onclick="closeImportModal()" style="background: none; border: none; color: var(--text-primary); font-size: 1.5rem; cursor: pointer;">×</button>
+        </div>
+        <form method="POST" action="{% url 'finance:import_csv' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1rem;">
+                <label for="id_file" style="color: var(--text-secondary); font-size: 0.95rem;">Arquivo CSV</label>
+                {{ import_form.file }}
+                {% if import_form.file.errors %}
+                <div style="color: var(--accent-red); font-size: 0.9rem;">{{ import_form.file.errors }}</div>
+                {% endif %}
+                <p style="color: var(--text-secondary); font-size: 0.85rem; margin: 0;">Delimitador: ponto e vírgula (;). Cabeçalho: Data;Descrição;Categoria;Tipo;Valor;Parcela;Paga.</p>
+            </div>
+            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: flex-end;">
+                <button type="button" onclick="closeImportModal()" class="btn-primary" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-primary);">Fechar</button>
+                <button type="submit" class="btn-primary">Enviar CSV</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.getElementById('open-import-modal').addEventListener('click', function() {
+        document.getElementById('import-modal').style.display = 'flex';
+    });
+    function closeImportModal() {
+        document.getElementById('import-modal').style.display = 'none';
+    }
+    window.addEventListener('click', function(event) {
+        if (event.target.id === 'import-modal') {
+            closeImportModal();
+        }
+    });
+</script>
 {% endblock %}

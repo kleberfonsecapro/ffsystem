@@ -179,6 +179,25 @@
 
 ---
 
+### 8. Exportar e Importar Transações via CSV
+
+**Data:** Junho 2026
+
+**Descrição:** Adicionada exportação filtrada de transações para CSV e importação via modal com validação de arquivo.
+
+**Arquivos alterados:**
+- `finance/views.py` — views `export_csv` e `import_csv` com filtros aplicados antes da exportação e parser de CSV de importação.
+- `finance/forms.py` — form `CSVImportForm` que valida extensão `.csv`, tamanho, UTF-8 e delimitador `;`.
+- `finance/urls.py` — rotas `export/csv/` e `import/csv/`.
+- `templates/finance_list.html` — botão de exportação que preserva filtros e modal de importação.
+
+**Detalhes técnicos:**
+- Exportação usa `text/csv; charset=utf-8`, `Content-Disposition` para download e `csv.writer(delimiter=";")`.
+- Importação aceita cabeçalho `Data;Descrição;Categoria;Tipo;Valor;Parcela;Paga`, cria categorias padrão se necessário e registra transações válidas.
+- Validação de `Paga` aceita `Sim`/`Não`, e `Parcela` aceita `1/12` com parcelamento opcional.
+
+---
+
 ### 15. Filtro date__lte no Dashboard para Excluir Parcelas Futuras
 
 **Data:** Junho 2026
@@ -322,11 +341,6 @@
 ---
 
 ## ⏳ A Implementar
-
-### 8. Exportar Transações (CSV)
-**Descrição:** Botão para exportar as transações do usuário em formato CSV.
-**Arquivos envolvidos:** `finance/views.py`, `finance/urls.py`, `templates/finance_list.html`
-**Observação:** Usar `csv` module do Python ou `HttpResponse` com `content_type=text/csv`.
 
 ### 9. Insight IA Real no Dashboard
 **Descrição:** Substituir a regra simples de comparação receita/despesa por uma chamada real à Groq para gerar análise financeira contextual.

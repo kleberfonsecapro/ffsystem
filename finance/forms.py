@@ -3,6 +3,7 @@ from .models import Transaction, Category
 
 
 class TransactionForm(forms.ModelForm):
+    """Form for manual transaction entry (manual entry, not parcelamento)"""
     is_installment = forms.BooleanField(
         required=False,
         label="Pagamento parcelado",
@@ -20,7 +21,15 @@ class TransactionForm(forms.ModelForm):
 
     class Meta:
         model = Transaction
-        fields = ["description", "amount", "date", "category_ref", "type"]
+        fields = [
+            "description",
+            "amount",
+            "date",
+            "category_ref",
+            "type",
+            "is_installment",
+            "installment_total",
+        ]
         labels = {
             "description": "Descrição",
             "amount": "Valor (R$)",
@@ -38,14 +47,15 @@ class TransactionForm(forms.ModelForm):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields["category_ref"].queryset = Category.objects.filter(
-            user__isnull=True
-        ) | Category.objects.filter(user=self.instance.user if self.instance.pk else None)
+        self.fields["category_ref"].queryset = (
+            Category.objects.filter(user__isnull=True)
+            | Category.objects.filter(user=self.instance.user if self.instance.pk else None)
+        )
         self.fields["category_ref"].empty_label = None
 
     def clean_amount(self):
-        amount = self.cleaned_data["amount"]
-        if amount <= 0:
+        amount = self.cleaned_data.get("amount")
+        if amount is not None and amount <= 0:
             raise forms.ValidationError("O valor deve ser maior que zero.")
         return amount
 
@@ -53,8 +63,38 @@ class TransactionForm(forms.ModelForm):
         cleaned = super().clean()
         is_installment = cleaned.get("is_installment")
         installment_total = cleaned.get("installment_total")
-
         if is_installment:
             if not installment_total or installment_total < 2:
                 self.add_error("installment_total", "Informe o número de parcelas (mínimo 2).")
         return cleaned
+
+
+class CSVImportForm(forms.Form):
+    file = forms.FileField(
+        label="Arquivo CSV",
+        help_text=(
+            "Envie arquivo .csv delimitado por ponto e vírgula (;) "
+            "com cabeçalho: Data;Descrição;Categoria;Tipo;Valor;Parcela;Paga."
+        ),
+    )
+
+    def clean_file(self):
+        csv_file = self.cleaned_data["file"]
+        if not csv_file.name.lower().endswith(".csv"):
+            raise forms.ValidationError("Envie um arquivo CSV com extensão .csv.")
+
+        if csv_file.size > 5 * 1024 * 1024:
+            raise forms.ValidationError("O arquivo CSV deve ter no máximo 5 MB.")
+
+        sample = csv_file.read(2048)
+        csv_file.seek(0)
+
+        try:
+            sample_text = sample.decode("utf-8")
+        except UnicodeDecodeError:
+            raise forms.ValidationError("O arquivo deve estar codificado em UTF-8.")
+
+        if ";" not in sample_text:
+            raise forms.ValidationError("Use ponto e vírgula (;) como delimitador no CSV.")
+
+        return csv_file
