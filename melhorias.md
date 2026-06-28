@@ -248,12 +248,36 @@
 
 ---
 
-## ⏳ A Implementar
+### 20. Categorias Personalizadas
 
-### 6. Categorias Personalizadas
-**Descrição:** Permitir que o usuário crie suas próprias categorias em vez de usar as 8 fixas no model.
-**Arquivos envolvidos:** `finance/models.py` (novo model `Category`), `finance/forms.py`, migrações
-**Observação:** Model `Transaction.category` mudaria de `CharField` para `ForeignKey` para `Category`.
+**Data:** Junho 2026
+
+**Descrição:** Implementado model `Category` com suporte a categorias padrão (globais) e futuramente categorias por usuário. O campo `category` do model `Transaction` foi mantido como legado, e um novo FK `category_ref` foi adicionado para referenciar o model `Category`.
+
+**Arquivos alterados:**
+
+| Arquivo | Mudança |
+|---|---|
+| `finance/models.py` | Novo model `Category` (name, user, type) + FK `category_ref` em `Transaction` + property `category_display` |
+| `finance/migrations/0003_category_transaction_category_ref.py` | Cria model Category e adiciona campo category_ref |
+| `finance/migrations/0004_seed_categories.py` | Data migration que cria 8 categorias padrão e vincula transações existentes |
+| `finance/forms.py` | Form usa `category_ref` (ModelChoiceField) com queryset filtrado por tipo |
+| `finance/views.py` | `form.cleaned_data["category"]` → `form.cleaned_data["category_ref"]` |
+| `finance/admin.py` | `CategoryAdmin` registrado, `TransactionAdmin` usa `category_display` |
+| `templates/finance_list.html` | `tx.category` → `tx.category_display` |
+| `templates/finance_add.html` | `form.category` → `form.category_ref` |
+
+**Detalhes técnicos:**
+- `Category` model: `name` (CharField), `user` (FK null → global), `type` (receita/despesa/ambos)
+- 8 categorias padrão criadas com `user=None` (visíveis a todos)
+- `Transaction.category_ref` é FK nullable com `on_delete=SET_NULL` (não quebra registros se categoria for removida)
+- `Transaction.category_display` property: retorna `category_ref.name` se existir, senão fallback para `category` (legado)
+- Form `__init__` filtra categorias: globais + do usuário da transação
+- Transações parceladas também usam `category_ref` na criação em lote
+
+---
+
+## ⏳ A Implementar
 
 ### 7. Filtros na Listagem
 **Descrição:** Adicionar filtros por tipo (receita/despesa) e categoria na página de listagem (filtro por mês já implementado).

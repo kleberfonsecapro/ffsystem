@@ -69,7 +69,7 @@ def finance_add(request):
                         description=form.cleaned_data["description"],
                         amount=parcel_amount,
                         date=first_date + relativedelta(months=i - 1),
-                        category=form.cleaned_data["category"],
+                        category_ref=form.cleaned_data["category_ref"],
                         type=form.cleaned_data["type"],
                         is_installment=True,
                         installment_total=total,

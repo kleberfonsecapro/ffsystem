@@ -1,5 +1,5 @@
 from django import forms
-from .models import Transaction
+from .models import Transaction, Category
 
 
 class TransactionForm(forms.ModelForm):
@@ -20,21 +20,28 @@ class TransactionForm(forms.ModelForm):
 
     class Meta:
         model = Transaction
-        fields = ["description", "amount", "date", "category", "type"]
+        fields = ["description", "amount", "date", "category_ref", "type"]
         labels = {
             "description": "Descrição",
             "amount": "Valor (R$)",
             "date": "Data",
-            "category": "Categoria",
+            "category_ref": "Categoria",
             "type": "Tipo",
         }
         widgets = {
             "description": forms.TextInput(attrs={"class": "form-control", "placeholder": "Ex: Salário, Mercado..."}),
             "amount": forms.NumberInput(attrs={"class": "form-control", "step": "0.01", "placeholder": "0.00"}),
             "date": forms.DateInput(attrs={"class": "form-control", "type": "date"}),
-            "category": forms.Select(attrs={"class": "form-control"}),
+            "category_ref": forms.Select(attrs={"class": "form-control"}),
             "type": forms.RadioSelect(attrs={"class": "type-radio"}),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["category_ref"].queryset = Category.objects.filter(
+            user__isnull=True
+        ) | Category.objects.filter(user=self.instance.user if self.instance.pk else None)
+        self.fields["category_ref"].empty_label = None
 
     def clean_amount(self):
         amount = self.cleaned_data["amount"]
