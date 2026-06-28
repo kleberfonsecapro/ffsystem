@@ -430,3 +430,116 @@ tr:last-child td {
     font-size: 1rem;
     padding: 0.8rem;
 }
+
+/* Installment Toggle */
+.form-divider {
+    border-top: 1px solid var(--border-color);
+    margin: 1.5rem 0;
+}
+
+.installment-toggle {
+    background: var(--bg-main);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.toggle-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+}
+
+.toggle-text {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--text-primary);
+    font-weight: 500;
+    font-size: 0.95rem;
+}
+
+.toggle-text i {
+    color: var(--accent-blue);
+}
+
+.toggle-switch {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+.toggle-switch .form-check-input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+}
+
+.toggle-slider {
+    width: 44px;
+    height: 24px;
+    background: var(--border-color);
+    border-radius: 12px;
+    transition: all 0.3s;
+    position: relative;
+    cursor: pointer;
+}
+
+.toggle-slider::after {
+    content: '';
+    position: absolute;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--text-secondary);
+    top: 3px;
+    left: 3px;
+    transition: all 0.3s;
+}
+
+.toggle-switch .form-check-input:checked + .toggle-slider {
+    background: var(--accent-blue);
+}
+
+.toggle-switch .form-check-input:checked + .toggle-slider::after {
+    background: #fff;
+    left: 23px;
+}
+
+.installment-details {
+    background: var(--bg-main);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+}
+
+.installment-details p {
+    margin-bottom: 0;
+}
+
+.installment-details label {
+    display: block;
+    margin-bottom: 0.4rem;
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+.installment-preview {
+    margin-top: 0.75rem;
+    padding: 0.6rem 0.75rem;
+    background: rgba(79, 70, 229, 0.1);
+    border: 1px solid rgba(79, 70, 229, 0.2);
+    border-radius: 6px;
+    color: var(--accent-blue);
+    font-size: 0.9rem;
+    display: none;
+}
+
+.installment-preview i {
+    margin-right: 0.4rem;
+}

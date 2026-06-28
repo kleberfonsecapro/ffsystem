@@ -28,9 +28,44 @@
     {% endif %}
     <form method="POST" action="{% if editing %}{% url 'finance:edit' form.instance.pk %}{% else %}{% url 'finance:add' %}{% endif %}">
         {% csrf_token %}
-        {{ form.as_p }}
+
+        <p>
+            <label for="id_description">{{ form.description.label }}</label>
+            {{ form.description }}
+        </p>
+        <p>
+            <label for="id_amount">{{ form.amount.label }}</label>
+            {{ form.amount }}
+        </p>
+        <p>
+            <label for="id_date">{{ form.date.label }}</label>
+            {{ form.date }}
+        </p>
+        <p>
+            <label for="id_category">{{ form.category.label }}</label>
+            {{ form.category }}
+        </p>
+        <p>
+            <label>{{ form.type.label }}</label>
+            {{ form.type }}
+        </p>
+
         {% if not editing %}
-        <div id="installment-fields" style="display: none;">
+        <div class="form-divider"></div>
+
+        <div class="installment-toggle">
+            <label class="toggle-label">
+                <span class="toggle-text">
+                    <i class="fa-solid fa-calendar-days"></i> Pagamento parcelado
+                </span>
+                <span class="toggle-switch">
+                    {{ form.is_installment }}
+                    <span class="toggle-slider"></span>
+                </span>
+            </label>
+        </div>
+
+        <div id="installment-fields" class="installment-details" style="display: none;">
             <p>
                 <label for="{{ form.installment_total.id_for_label }}">{{ form.installment_total.label }}</label>
                 {{ form.installment_total }}
@@ -38,8 +73,10 @@
                 <span class="errorlist">{{ form.installment_total.errors }}</span>
                 {% endif %}
             </p>
+            <div id="installment-preview" class="installment-preview"></div>
         </div>
         {% endif %}
+
         <button type="submit" class="btn-primary" style="width: 100%; justify-content: center; margin-top: 1rem;">
             {% if editing %}Atualizar Transação{% else %}Salvar Transação{% endif %}
         </button>
@@ -51,9 +88,26 @@
     document.addEventListener('DOMContentLoaded', function() {
         const checkbox = document.getElementById('id_is_installment');
         const installmentFields = document.getElementById('installment-fields');
-        const amountLabel = document.querySelector('label[for="id_amount"]');
         const amountInput = document.getElementById('id_amount');
+        const dateInput = document.getElementById('id_date');
+        const totalInput = document.getElementById('id_installment_total');
+        const preview = document.getElementById('installment-preview');
+
+        const amountLabel = document.querySelector('label[for="id_amount"]');
         const dateLabel = document.querySelector('label[for="id_date"]');
+
+        function updatePreview() {
+            const amount = parseFloat(amountInput.value) || 0;
+            const total = parseInt(totalInput.value) || 0;
+
+            if (checkbox.checked && amount > 0 && total >= 2) {
+                const parcela = (amount / total).toFixed(2);
+                preview.innerHTML = `<i class="fa-solid fa-calculator"></i> ${total}x de <strong>R$ ${parcela}</strong> — sem juros`;
+                preview.style.display = 'block';
+            } else {
+                preview.style.display = 'none';
+            }
+        }
 
         function toggleInstallment() {
             if (checkbox.checked) {
@@ -63,6 +117,7 @@
                 if (dateLabel) dateLabel.textContent = 'Data da primeira parcela';
             } else {
                 installmentFields.style.display = 'none';
+                preview.style.display = 'none';
                 if (amountLabel) amountLabel.textContent = 'Valor (R$)';
                 if (amountInput) amountInput.placeholder = '0.00';
                 if (dateLabel) dateLabel.textContent = 'Data';
@@ -70,6 +125,8 @@
         }
 
         checkbox.addEventListener('change', toggleInstallment);
+        amountInput.addEventListener('input', updatePreview);
+        totalInput.addEventListener('input', updatePreview);
         toggleInstallment();
     });
 </script>

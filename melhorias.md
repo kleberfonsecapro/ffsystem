@@ -117,9 +117,15 @@
 | `static/css/style.css` | Classe `.badge-installment` |
 | `requirements.txt` | `python-dateutil==2.9.0` |
 
+**Melhoria visual (Junho 2026):**
+- Toggle switch estilizado no lugar de checkbox padrão
+- Preview dinâmico: "12x de R$ 100,00 — sem juros" conforme usuário digita
+- Campos de parcelamento em container com fundo escuro consistente
+- Labels e placeholders mudam dinamicamente ao ativar/desativar parcelamento
+
 **Detalhes técnicos:**
-- Checkbox "Pagamento parcelado" no formulário de nova transação
-- Ao marcar, aparecem campos: "Número de parcelas" e "Valor total"
+- Toggle switch "Pagamento parcelado" no formulário de nova transação
+- Ao ativar, aparecem campos: "Número de parcelas" com preview do cálculo
 - Validação: valor total deve ser exatamente divisível pelo número de parcelas
 - Cada parcela é uma `Transaction` individual com `installment_group` UUID compartilhado
 - Parcela 1 na data informada, parcela 2 no mês seguinte (+1 mês), etc.

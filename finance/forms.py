@@ -15,7 +15,6 @@ class TransactionForm(forms.ModelForm):
         max_value=120,
         widget=forms.NumberInput(attrs={
             "class": "form-control", "placeholder": "Ex: 12", "id": "id_installment_total",
-            "style": "display: none;",
         }),
     )
 
@@ -24,8 +23,8 @@ class TransactionForm(forms.ModelForm):
         fields = ["description", "amount", "date", "category", "type"]
         labels = {
             "description": "Descrição",
-            "amount": "Valor total (R$)",
-            "date": "Data da primeira parcela",
+            "amount": "Valor (R$)",
+            "date": "Data",
             "category": "Categoria",
             "type": "Tipo",
         }
