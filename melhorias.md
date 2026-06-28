@@ -587,3 +587,60 @@ Sem configuração de SMTP, usa `console.EmailBackend` (imprime no log do contai
 - Ambas views usam `@require_POST` + `@login_required` + filtro `user=request.user`
 - CSRF token obrigatório
 - Confirmação JavaScript antes de enviar (dupla proteção: JS + view valida POST)
+
+---
+
+### 28. Filtro "Despesa Parcelada" + Visualização por Grupo de Parcelas
+
+**Data:** Junho 2026
+
+**Descrição:** Adicionada opção "Despesa Parcelada" no filtro de tipo. Ao selecionar, a listagem muda de agrupamento mensal para agrupamento por **grupo de parcelas** (`installment_group`). Cada grupo aparece como um card com: descrição, categoria, total da compra, número de parcelas, período (primeira/última data), e botão "Excluir todas" que remove todas as parcelas do grupo de uma vez.
+
+**Arquivos alterados:**
+
+| Arquivo | Mudança |
+|---|---|
+| `finance/views.py` | `apply_transaction_filters`: trata `tipo=despesa_parcelada` filtrando `type=despesa` + `is_installment=True`; `finance_list`: quando `selected_type == "despesa_parcelada"`, agrupa por `installment_group` em vez de mês; adiciona `type_choices` com nova opção |
+| `finance/urls.py` | Rota `installment-group/<uuid:group_id>/delete/` → `finance_delete_installment_group` |
+| `templates/finance_list.html` | Novo bloco condicional: se `selected_type == "despesa_parcelada"` renderiza cards `.installment-group-card` com tabela de parcelas; senão renderiza agrupamento mensal normal |
+| `static/css/style.css` | Estilos para `.installment-group-card` (já cobertos por inline styles no template) |
+
+**Detalhes técnicos:**
+
+**1. Filtro "Despesa Parcelada":**
+- Opção adicionada em `type_choices` no contexto: `("despesa_parcelada", "Despesa Parcelada")`
+- Em `apply_transaction_filters`: `qs.filter(type="despesa", is_installment=True)`
+- Combina com filtros de mês e categoria normalmente
+
+**2. Agrupamento por Grupo de Parcelas (não por mês):**
+- Quando `selected_type == "despesa_parcelada"`:
+  - Itera `qs` e agrupa em dict por `installment_group` (UUID)
+  - Cada grupo acumula: `description`, `category`, `total_amount` (soma das parcelas), `installment_total`, lista de `installments` (objetos Transaction), `first_date`, `last_date`
+  - Ordena grupos por `first_date` decrescente (mais recentes primeiro)
+  - Template recebe `grouped_transactions` com estrutura diferente: cada item tem `group_id`, `description`, `category`, `total_amount`, `installment_total`, `installments[]`, `first_date`, `last_date`
+
+**3. Cards de Grupo de Parcelas (UI):**
+- Cada grupo = um card (`.installment-group-card`) com:
+  - Cabeçalho: descrição (roxo), metadados (qtd parcelas, categoria, período)
+  - Total da compra em destaque (vermelho, maior)
+  - Botão "Excluir todas" → POST para `finance:delete_installment_group` com confirmação JS
+  - Tabela compacta das parcelas: colunas Parcela (1/12, 2/12...), Data, Valor, Status (Paga/Pendente), Ações (Marcar paga, Editar)
+  - Parcelas pagas ficam com opacidade reduzida e texto tachado (`.paid-row`)
+
+**4. Exclusão do Grupo:**
+- View `finance_delete_installment_group` (reaproveitada da melhoria #27):
+  - `Transaction.objects.filter(user=request.user, installment_group=group_id).delete()`
+  - Mensagem: `Grupo de parcelas "Descrição" (N parcelas) excluído com sucesso!`
+  - Redireciona para listagem mantendo filtro `?tipo=despesa_parcelada`
+
+**Impacto UX:**
+- Usuário filtra "Despesa Parcelada" → vê cada compra parcelada como um card único (ex: "Carro - 12x", "Moto - 24x")
+- Visualização clara do total da compra, não parcelas espalhadas por meses
+- Ação única para cancelar compra inteira: "Excluir todas"
+- Ainda pode editar/marcar paga parcela individualmente se necessário
+- Filtros de mês e categoria funcionam sobre os grupos (filtra grupos que tenham parcelas no mês/categoria)
+
+**Segurança:**
+- View usa `@require_POST` + `@login_required` + filtro `user=request.user`
+- CSRF token no formulário
+- Confirmação JS: `confirm('Excluir TODAS as N parcelas de "Descrição"? Esta ação não pode ser desfeita.')`

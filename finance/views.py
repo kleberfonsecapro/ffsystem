@@ -22,7 +22,10 @@ def apply_transaction_filters(qs, request):
 
     selected_type = request.GET.get("tipo")
     if selected_type:
-        qs = qs.filter(type=selected_type)
+        if selected_type == "despesa_parcelada":
+            qs = qs.filter(type="despesa", is_installment=True)
+        else:
+            qs = qs.filter(type=selected_type)
 
     selected_category = request.GET.get("categoria")
     if selected_category:
@@ -57,18 +60,56 @@ def finance_list(request):
         user__in=[None, request.user]
     ).values_list("name", flat=True).distinct().order_by("name")
 
-    grouped = []
-    current_month = None
-    for tx in qs:
-        key = tx.date.strftime("%Y-%m")
-        if key != current_month:
-            current_month = key
-            grouped.append({"month": tx.date, "transactions": [], "income": 0, "expense": 0})
-        grouped[-1]["transactions"].append(tx)
-        if tx.type == "receita":
-            grouped[-1]["income"] += tx.amount
-        else:
-            grouped[-1]["expense"] += tx.amount
+    # Type choices for filter - add "despesa_parcelada" option
+    type_choices = list(Transaction.TYPE_CHOICES) + [("despesa_parcelada", "Despesa Parcelada")]
+
+    # Special handling for "despesa_parcelada" filter - group by installment_group
+    if selected_type == "despesa_parcelada":
+        # Group by installment_group
+        installment_groups = {}
+        for tx in qs:
+            group_id = tx.installment_group
+            if group_id not in installment_groups:
+                installment_groups[group_id] = {
+                    "group_id": group_id,
+                    "description": tx.description,
+                    "category": tx.category_display,
+                    "total_amount": 0,
+                    "installment_total": tx.installment_total,
+                    "installments": [],
+                    "first_date": tx.date,
+                    "last_date": tx.date,
+                }
+            installment_groups[group_id]["installments"].append(tx)
+            installment_groups[group_id]["total_amount"] += tx.amount
+            if tx.date < installment_groups[group_id]["first_date"]:
+                installment_groups[group_id]["first_date"] = tx.date
+            if tx.date > installment_groups[group_id]["last_date"]:
+                installment_groups[group_id]["last_date"] = tx.date
+
+        # Convert to list and sort by first_date desc
+        grouped = list(installment_groups.values())
+        grouped.sort(key=lambda g: g["first_date"], reverse=True)
+
+        # Calculate subtotals for template compatibility
+        for g in grouped:
+            g["income"] = 0
+            g["expense"] = g["total_amount"]
+            g["month"] = g["first_date"]  # for template compatibility
+    else:
+        # Normal monthly grouping
+        grouped = []
+        current_month = None
+        for tx in qs:
+            key = tx.date.strftime("%Y-%m")
+            if key != current_month:
+                current_month = key
+                grouped.append({"month": tx.date, "transactions": [], "income": 0, "expense": 0})
+            grouped[-1]["transactions"].append(tx)
+            if tx.type == "receita":
+                grouped[-1]["income"] += tx.amount
+            else:
+                grouped[-1]["expense"] += tx.amount
 
     return render(request, "finance_list.html", {
         "grouped_transactions": grouped,
@@ -77,7 +118,7 @@ def finance_list(request):
         "selected_type": selected_type,
         "selected_category": selected_category,
         "categories_available": categories_available,
-        "type_choices": Transaction.TYPE_CHOICES,
+        "type_choices": type_choices,
         "import_form": CSVImportForm(),
     })
 
@@ -333,7 +374,6 @@ def finance_delete_installment_group(request, group_id):
     if count == 0:
         messages.info(request, "Nenhuma parcela encontrada para este grupo.")
     else:
-        # Pega a descrição para a mensagem
         first_tx = transactions.first()
         desc = first_tx.description
         transactions.delete()

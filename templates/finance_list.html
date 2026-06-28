@@ -6,7 +6,7 @@
 <div class="topbar">
     <h1 class="page-title">Gestão Financeira: {{ request.user.username|title }}</h1>
     <div class="topbar-actions">
-        <a href="{% url 'finance:export_csv' %}?{% if selected_month %}mes={{ selected_month }}&amp;{% endif %}{% if selected_type %}tipo={{ selected_type }}&amp;{% endif %}{% if selected_category %}categoria={{ selected_category }}&amp;{% endif %}" class="btn-secondary">
+        <a href="{% url 'finance:export_csv' %}?{% if selected_month %}mes={{ selected_month }}&{% endif %}{% if selected_type %}tipo={{ selected_type }}&{% endif %}{% if selected_category %}categoria={{ selected_category }}&{% endif %}" class="btn-secondary">
             <i class="fa-solid fa-file-csv"></i> Exportar CSV
         </a>
         <button type="button" class="btn-secondary" id="open-import-modal">
@@ -86,149 +86,108 @@
         </div>
     </div>
 
-    {% for group in grouped_transactions %}
-    <div style="margin-bottom: 1.5rem;">
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 2px solid var(--border-color); margin-bottom: 0.5rem;">
-            <h4 style="color: var(--accent-blue); font-size: 1rem; font-weight: 600;">{{ group.month|date:"F Y" }}</h4>
-            <div style="display: flex; gap: 1rem; font-size: 0.85rem; align-items: center;">
-                <span style="color: var(--accent-green);">Receitas: R$ {{ group.income|floatformat:2 }}</span>
-                <span style="color: var(--accent-red);">Despesas: R$ {{ group.expense|floatformat:2 }}</span>
-                {% with group.transactions|first as first_tx %}
-                    {% if first_tx and first_tx.is_installment and first_tx.installment_group %}
-                    <form method="POST" action="{% url 'finance:delete_installment_group' first_tx.installment_group %}" style="display: inline;" onsubmit="return confirm('Excluir TODAS as parcelas deste grupo? Esta ação não pode ser desfeita.')">
+    {% if selected_type == "despesa_parcelada" %}
+        <!-- View for installment groups -->
+        {% for group in grouped_transactions %}
+        <div class="installment-group-card" style="margin-bottom: 1rem; padding: 1rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
+                <div>
+                    <h4 style="color: var(--accent-purple); font-size: 1rem; font-weight: 600; margin-bottom: 0.25rem;">{{ group.description }}</h4>
+                    <div style="display: flex; gap: 1rem; font-size: 0.85rem; color: var(--text-secondary); flex-wrap: wrap;">
+                        <span><i class="fa-solid fa-layer-group"></i> {{ group.installment_total }} parcelas</span>
+                        <span><i class="fa-solid fa-tag"></i> {{ group.category }}</span>
+                        <span><i class="fa-solid fa-calendar"></i> {{ group.first_date|date:"d/m/Y" }} a {{ group.last_date|date:"d/m/Y" }}</span>
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+                    <span style="color: var(--accent-red); font-weight: 600; font-size: 1.1rem;">R$ {{ group.total_amount|floatformat:2 }}</span>
+                    <form method="POST" action="{% url 'finance:delete_installment_group' group.group_id %}" style="display: inline;" onsubmit="return confirm('Excluir TODAS as {{ group.installment_total }} parcelas de \"{{ group.description }}\"? Esta ação não pode ser desfeita.')">
                         {% csrf_token %}
-                        <button type="submit" class="btn-danger-outline" style="font-size: 0.7rem; padding: 0.3rem 0.6rem; display: flex; align-items: center; gap: 0.3rem;">
-                            <i class="fa-solid fa-layer-group"></i> Excluir grupo
+                        <button type="submit" class="btn-danger-outline" style="font-size: 0.8rem; padding: 0.4rem 0.8rem; display: flex; align-items: center; gap: 0.4rem;">
+                            <i class="fa-solid fa-trash-can"></i> Excluir todas
                         </button>
                     </form>
-                    {% endif %}
-                {% endwith %}
+                </div>
+            </div>
+            <div class="table-container">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 80px;">Parcela</th>
+                            <th>Data</th>
+                            <th>Valor</th>
+                            <th style="width: 80px;">Status</th>
+                            <th style="width: 100px;">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tx in group.installments %}
+                        <tr class="{% if tx.paid %}paid-row{% endif %}">
+                            <td style="text-align: center; font-weight: 600; color: var(--accent-purple);">{{ tx.installment_number }}/{{ tx.installment_total }}</td>
+                            <td>{{ tx.date|date:"d M Y" }}</td>
+                            <td class="text-red" style="font-weight: 600;">R$ {{ tx.amount|floatformat:2 }}</td>
+                            <td>
+                                {% if tx.paid %}
+                                    <span class="badge badge-paid">Paga</span>
+                                {% else %}
+                                    <span class="badge badge-expense">Pendente</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div style="display: flex; gap: 0.5rem; align-items: center; justify-content: center;">
+                                    <form method="POST" action="{% url 'finance:toggle_paid' tx.pk %}">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn-paid" title="{% if tx.paid %}Desmarcar como paga{% else %}Marcar como paga{% endif %}" style="padding: 0.3rem 0.5rem;">
+                                            {% if tx.paid %}
+                                                <i class="fa-solid fa-rotate-left"></i>
+                                            {% else %}
+                                                <i class="fa-solid fa-check"></i>
+                                            {% endif %}
+                                        </button>
+                                    </form>
+                                    <a href="{% url 'finance:edit' tx.pk %}" class="btn-edit" title="Editar" style="padding: 0.3rem 0.5rem;">
+                                        <i class="fa-solid fa-pen-to-square"></i>
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
-        <table>
-            <thead>
-                <tr>
-                    <th>Data</th>
-                    <th>Descrição</th>
-                    <th>Categoria</th>
-                    <th>Tipo</th>
-                    <th>Valor</th>
-                    <th>Ações</th>
-                </tr>
-            </thead>
-            <tbody>
-                {% for tx in group.transactions %}
-                <tr class="{% if tx.paid %}paid-row{% endif %}">
-                    <td>{{ tx.date|date:"d M Y" }}</td>
-                    <td style="font-weight: 500;">
-                        {% if tx.paid %}<s>{% endif %}
-                        {{ tx.description }}
-                        {% if tx.paid %}</s>{% endif %}
-                        {% if tx.is_installment %}
-                        <span class="badge badge-installment">{{ tx.installment_number }}/{{ tx.installment_total }}</span>
-                        {% endif %}
-                    </td>
-                    <td>{{ tx.category_display }}</td>
-                    <td>
-                        {% if tx.paid %}
-                            <span class="badge badge-paid">Paga</span>
-                        {% elif tx.type == 'receita' %}
-                            <span class="badge badge-income">Receita</span>
-                        {% else %}
-                            <span class="badge badge-expense">Despesa</span>
-                        {% endif %}
-                    </td>
-                    <td class="{% if tx.paid %}text-paid{% elif tx.type == 'receita' %}text-green{% else %}text-red{% endif %}" style="font-weight: 600;">
-                        R$ {{ tx.amount|floatformat:2 }}
-                    </td>
-                    <td>
-                        <div style="display: flex; gap: 0.5rem; align-items: center;">
-                            <form method="POST" action="{% url 'finance:toggle_paid' tx.pk %}">
-                                {% csrf_token %}
-                                <button type="submit" class="btn-paid" title="{% if tx.paid %}Desmarcar como paga{% else %}Marcar como paga{% endif %}">
-                                    {% if tx.paid %}
-                                        <i class="fa-solid fa-rotate-left"></i>
-                                    {% else %}
-                                        <i class="fa-solid fa-check"></i>
-                                    {% endif %}
-                                </button>
-                            </form>
-                            <a href="{% url 'finance:edit' tx.pk %}" class="btn-edit" title="Editar">
-                                <i class="fa-solid fa-pen-to-square"></i>
-                            </a>
-                            <form method="POST" action="{% url 'finance:delete' tx.pk %}" onsubmit="return confirm('Tem certeza que deseja excluir esta transação?')">
-                                {% csrf_token %}
-                                <button type="submit" class="btn-delete" title="Excluir">
-                                    <i class="fa-solid fa-trash-can"></i>
-                                </button>
-                            </form>
-                        </div>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% empty %}
-    <div style="text-align: center; color: var(--text-secondary); padding: 2rem;">
-        Nenhuma transação encontrada.
-    </div>
-    {% endfor %}
-</div>
-
-<div id="import-modal" style="display:none; position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 999; align-items: center; justify-content: center; padding: 1rem;">
-    <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 16px; max-width: 520px; width: 100%; padding: 1.5rem; box-shadow: 0 20px 50px rgba(0,0,0,0.35); position: relative;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; gap: 1rem;">
-            <div>
-                <h3 style="font-size: 1.1rem; font-weight: 700; margin-bottom: 0.25rem;">Importar Transações CSV</h3>
-                <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 0;">Use um arquivo CSV com delimitador ponto e vírgula e cabeçalho obrigatório.</p>
-            </div>
-            <button type="button" onclick="closeImportModal()" style="background: none; border: none; color: var(--text-primary); font-size: 1.5rem; cursor: pointer;">×</button>
+        {% empty %}
+        <div style="text-align: center; color: var(--text-secondary); padding: 2rem;">
+            Nenhuma despesa parcelada encontrada.
         </div>
-        <form method="POST" action="{% url 'finance:import_csv' %}" enctype="multipart/form-data">
-            {% csrf_token %}
-            <div style="display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1rem;">
-                <label for="id_file" style="color: var(--text-secondary); font-size: 0.95rem;">Arquivo CSV</label>
-                {{ import_form.file }}
-                {% if import_form.file.errors %}
-                <div style="color: var(--accent-red); font-size: 0.9rem;">{{ import_form.file.errors }}</div>
-                {% endif %}
-                <p style="color: var(--text-secondary); font-size: 0.85rem; margin: 0;">Delimitador: ponto e vírgula (;). Cabeçalho: Data;Descrição;Categoria;Tipo;Valor;Parcela;Paga.</p>
+        {% endfor %}
+    {% else %}
+        <!-- Normal monthly grouping view -->
+        {% for group in grouped_transactions %}
+        <div style="margin-bottom: 1.5rem;">
+            <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 2px solid var(--border-color); margin-bottom: 0.5rem;">
+                <h4 style="color: var(--accent-blue); font-size: 1rem; font-weight: 600;">{{ group.month|date:"F Y" }}</h4>
+                <div style="display: flex; gap: 1rem; font-size: 0.85rem; align-items: center;">
+                    <span style="color: var(--accent-green);">Receitas: R$ {{ group.income|floatformat:2 }}</span>
+                    <span style="color: var(--accent-red);">Despesas: R$ {{ group.expense|floatformat:2 }}</span>
+                </div>
             </div>
-            <div style="display: flex; gap: 0.75rem; flex-wrap: wrap; justify-content: flex-end;">
-                <button type="button" onclick="closeImportModal()" class="btn-primary" style="background: transparent; border: 1px solid var(--border-color); color: var(--text-primary);">Fechar</button>
-                <button type="submit" class="btn-primary">Enviar CSV</button>
-            </div>
-        </form>
-    </div>
-</div>
-
-<script>
-    document.getElementById('open-import-modal').addEventListener('click', function() {
-        document.getElementById('import-modal').style.display = 'flex';
-    });
-    function closeImportModal() {
-        document.getElementById('import-modal').style.display = 'none';
-    }
-    window.addEventListener('click', function(event) {
-        if (event.target.id === 'import-modal') {
-            closeImportModal();
-        }
-    });
-
-    // Bulk actions dropdown
-    const bulkTrigger = document.getElementById('bulk-actions-trigger');
-    const bulkDropdown = document.getElementById('bulk-actions-dropdown');
-    if (bulkTrigger && bulkDropdown) {
-        bulkTrigger.addEventListener('click', function(e) {
-            e.stopPropagation();
-            bulkDropdown.style.display = bulkDropdown.style.display === 'block' ? 'none' : 'block';
-        });
-        document.addEventListener('click', function(e) {
-            if (!bulkTrigger.contains(e.target) && !bulkDropdown.contains(e.target)) {
-                bulkDropdown.style.display = 'none';
-            }
-        });
-    }
-</script>
-{% endblock %}
+            <table>
+                <thead>
+                    <tr>
+                        <th>Data</th>
+                        <th>Descrição</th>
+                        <th>Categoria</th>
+                        <th>Tipo</th>
+                        <th>Valor</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for tx in group.transactions %}
+                    <tr class="{% if tx.paid %}paid-row{% endif %}">
+                        <td>{{ tx.date|date:"d M Y" }}</td>
+                        <td style="font-weight: 500;">
+                            {% if tx.paid %}<s>{% endif %}
+                            {{ tx.description }}
+                            {% if tx.paid %}

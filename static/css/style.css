@@ -810,3 +810,45 @@ tr:last-child td {
     background: rgba(239, 68, 68, 0.1);
     border-color: var(--accent-red);
 }
+
+/* Installment Group Card (for despesa_parcelada filter) */
+.installment-group-card {
+    animation: fadeIn 0.2s ease-out;
+}
+
+.installment-group-card h4 {
+    color: var(--accent-purple);
+}
+
+.installment-group-card .table-container table {
+    font-size: 0.9rem;
+}
+
+.installment-group-card th {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.75rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    color: var(--text-secondary);
+}
+
+.installment-group-card td {
+    padding: 0.75rem 0.5rem;
+    font-size: 0.85rem;
+}
+
+.installment-group-card .badge {
+    font-size: 0.7rem;
+    padding: 0.2rem 0.5rem;
+}
+
+.installment-group-card .btn-paid,
+.installment-group-card .btn-edit {
+    padding: 0.3rem 0.5rem !important;
+    font-size: 0.85rem;
+}
+
+.installment-group-card .btn-danger-outline {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.75rem;
+}
