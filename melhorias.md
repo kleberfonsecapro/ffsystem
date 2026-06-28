@@ -224,30 +224,6 @@
 
 ---
 
-### 18. Dashboard Mostra Todas as Transações (Passadas e Futuras)
-
-**Data:** Junho 2026
-
-**Problema:** O dashboard foi alterado para mostrar apenas transações do mês corrente (item anterior), mas isso escondia receitas futuras (ex: salários lançados para julho), fazendo o saldo parecer zerado ou negativo mesmo com receita prevista.
-
-**Solução:** Removidos todos os filtros de data das queries de `total_income` e `total_expense` no dashboard. Agora o dashboard exibe **todas as transações registradas** (passadas e futuras), tanto para receitas quanto para despesas.
-
-**Arquivos alterados:**
-
-| Arquivo | Mudança |
-|---|---|
-| `dashboard/views.py` | `total_income` e `total_expense` sem filtro `date__gte`/`date__lte` (no `home` e `insight_api`) |
-| `templates/dashboard.html` | Rótulos "Saldo", "Receitas", "Despesas" (removido "(mês)") |
-
-**Detalhes técnicos:**
-- `total_income = transactions.filter(type="receita")` — sem filtro de data
-- `total_expense = transactions.filter(type="despesa")` — sem filtro de data
-- `current_balance = total_income - total_expense`
-- Insight API segue a mesma lógica: comparação de receitas vs despesas totais
-- Gráfico de fluxo de caixa (6 meses) permanece inalterado
-
----
-
 ## ⏳ A Implementar
 
 ### 6. Categorias Personalizadas
