@@ -131,7 +131,7 @@ Este projeto passou por uma auditoria de segurança completa com **37 problemas 
 
 ## 🧪 Pendências
 
-- [ ] Rate limiting no login (`django-axes`)
+- [x] Rate limiting no login (`django-axes`)
 - [ ] Rate limiting na API Groq (custo financeiro)
 - [ ] Password reset (esqueci minha senha)
 - [ ] Testes unitários e de integração

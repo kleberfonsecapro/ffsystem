@@ -28,9 +28,31 @@
 
 ---
 
+### 2. Rate Limiting no Login
+
+**Data:** Junho 2026
+
+**Descrição:** Implementado rate limiting no login com `django-axes` para prevenir ataques de força bruta.
+
+**Arquivos alterados:**
+
+| Arquivo | Mudança |
+|---|---|
+| `requirements.txt` | Adicionado `django-axes==6.4.0` |
+| `core/settings.py` | Adicionado `'axes'` em INSTALLED_APPS, `AxesMiddleware`, `AUTHENTICATION_BACKENDS` e configs `AXES_*` |
+
+**Detalhes técnicos:**
+- Bloqueio após **5 tentativas** erradas por combinação de IP + usuário
+- **15 minutos** de bloqueio (`AXES_COOLOFF_TIME`)
+- Contagem resetada ao login bem-sucedido (`AXES_RESET_ON_SUCCESS = True`)
+- Painel no admin para visualizar tentativas e desbloquear
+- Comando `manage.py axes_reset` para desbloqueio manual
+
+---
+
 ## Pendências (não implementadas)
 
-### 2. Editar Transações
+### 3. Editar Transações
 **Descrição:** Adicionar edição de transações na listagem para completar o CRUD.
 **Arquivos envolvidos:** `finance/views.py`, `finance/urls.py`, `templates/finance_list.html`
 **Observação:** A view de add já existe, basta criar uma similar para edição com `UpdateView` ou view function.
