@@ -277,6 +277,28 @@
 
 ---
 
+### 21. Localização pt-BR completa do sistema
+
+**Data:** Junho 2026
+
+**Problema:** Diversos textos no sistema estavam em inglês: título da página, brand na sidebar, login, cadastro, labels/help texts de formulários, nomes de meses nos gráficos, e `verbose_name` dos models.
+
+**Solução:** Substituídos todos os textos para português brasileiro nativo.
+
+**Arquivos alterados:**
+
+| Arquivo | Mudança |
+|---|---|
+| `users/forms.py` | Novo arquivo com `CadastroForm` e `AlterarSenhaForm` — labels e help texts em pt-br |
+| `users/views.py` | `UserCreationForm` → `CadastroForm` |
+| `dashboard/views.py` | `PasswordChangeForm` → `AlterarSenhaForm`; `month_abbr` → `MESES_PT_ABBR` (Jan/Fev/Mar...) |
+| `finance/models.py` | `verbose_name` e `verbose_name_plural` em pt-br para Category e Transaction |
+| `templates/base.html` | Brand "Family Finance System AI" → "SmartFinance AI"; title padrão pt-br |
+| `templates/login.html` | Título "Login - Financial..." → "Entrar - SmartFinance AI"; H1 traduzido |
+| `templates/register.html` | Título "Cadastro - Financial..." → "Cadastro - SmartFinance AI" |
+
+---
+
 ## ⏳ A Implementar
 
 ### 7. Filtros na Listagem

@@ -14,6 +14,7 @@ class Category(models.Model):
     type = models.CharField(max_length=10, choices=TYPE_CHOICES, default="ambos", verbose_name="tipo")
 
     class Meta:
+        verbose_name = "categoria"
         verbose_name_plural = "categorias"
         ordering = ["name"]
 
@@ -54,6 +55,8 @@ class Transaction(models.Model):
     installment_group = models.UUIDField(null=True, blank=True, verbose_name="grupo de parcelas")
 
     class Meta:
+        verbose_name = "transação"
+        verbose_name_plural = "transações"
         ordering = ["-date", "-created_at"]
 
     @property
