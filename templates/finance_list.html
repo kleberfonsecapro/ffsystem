@@ -52,27 +52,37 @@
     </div>
 
     <div class="bulk-actions">
-        <span class="bulk-actions-label">
-            <i class="fa-solid fa-triangle-exclamation"></i>
-            Ações irreversíveis — use com cuidado
-        </span>
-        <div class="bulk-actions-buttons">
-            <form method="POST" action="{% url 'finance:delete_by_type' %}" class="inline-form" onsubmit="return confirm('Excluir TODAS as despesas? Esta ação não pode ser desfeita.')">
-                {% csrf_token %}
-                <input type="hidden" name="tipo" value="despesa">
-                <button type="submit" class="btn-danger-outline">
-                    <i class="fa-solid fa-arrow-trend-down"></i>
-                    Excluir despesas
-                </button>
-            </form>
-            <form method="POST" action="{% url 'finance:delete_by_type' %}" class="inline-form" onsubmit="return confirm('Excluir TODAS as receitas? Esta ação não pode ser desfeita.')">
-                {% csrf_token %}
-                <input type="hidden" name="tipo" value="receita">
-                <button type="submit" class="btn-danger-outline">
-                    <i class="fa-solid fa-arrow-trend-up"></i>
-                    Excluir receitas
-                </button>
-            </form>
+        <div style="position: relative; display: inline-flex;">
+            <button type="button" class="btn-secondary" id="bulk-actions-trigger" style="font-size: 0.8rem; padding: 0.4rem 0.75rem; color: var(--text-secondary); border-color: var(--border-color);">
+                <i class="fa-solid fa-trash-can" style="margin-right: 0.4rem;"></i>
+                Ações de exclusão
+            </button>
+            <i class="fa-solid fa-chevron-down" style="position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%); color: var(--text-secondary); font-size: 0.65rem;"></i>
+            <div id="bulk-actions-dropdown" class="bulk-actions-dropdown" style="display: none; position: absolute; top: 100%; right: 0; margin-top: 0.4rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); min-width: 200px; z-index: 100; overflow: hidden;">
+                <div style="padding: 0.5rem;">
+                    <p style="font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 0.5rem; text-align: center;">
+                        <i class="fa-solid fa-triangle-exclamation"></i> Ações irreversíveis — use com cuidado
+                    </p>
+                </div>
+                <hr style="border-color: var(--border-color); margin: 0;">
+                <form method="POST" action="{% url 'finance:delete_by_type' %}" class="inline-form" style="width: 100%;">
+                    {% csrf_token %}
+                    <input type="hidden" name="tipo" value="despesa">
+                    <button type="submit" class="btn-danger-outline" style="width: 100%; justify-content: flex-start; padding: 0.6rem 1rem; border: none; background: none; border-radius: 0; font-size: 0.85rem; color: var(--accent-red);" onclick="return confirm('Excluir TODAS as despesas? Esta ação não pode ser desfeita.')">
+                        <i class="fa-solid fa-arrow-trend-down" style="margin-right: 0.5rem;"></i>
+                        Excluir todas as despesas
+                    </button>
+                </form>
+                <hr style="border-color: var(--border-color); margin: 0;">
+                <form method="POST" action="{% url 'finance:delete_by_type' %}" class="inline-form" style="width: 100%;">
+                    {% csrf_token %}
+                    <input type="hidden" name="tipo" value="receita">
+                    <button type="submit" class="btn-danger-outline" style="width: 100%; justify-content: flex-start; padding: 0.6rem 1rem; border: none; background: none; border-radius: 0; font-size: 0.85rem; color: var(--accent-red);" onclick="return confirm('Excluir TODAS as receitas? Esta ação não pode ser desfeita.')">
+                        <i class="fa-solid fa-arrow-trend-up" style="margin-right: 0.5rem;"></i>
+                        Excluir todas as receitas
+                    </button>
+                </form>
+            </div>
         </div>
     </div>
 
@@ -80,9 +90,19 @@
     <div style="margin-bottom: 1.5rem;">
         <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 2px solid var(--border-color); margin-bottom: 0.5rem;">
             <h4 style="color: var(--accent-blue); font-size: 1rem; font-weight: 600;">{{ group.month|date:"F Y" }}</h4>
-            <div style="display: flex; gap: 1rem; font-size: 0.85rem;">
+            <div style="display: flex; gap: 1rem; font-size: 0.85rem; align-items: center;">
                 <span style="color: var(--accent-green);">Receitas: R$ {{ group.income|floatformat:2 }}</span>
                 <span style="color: var(--accent-red);">Despesas: R$ {{ group.expense|floatformat:2 }}</span>
+                {% with group.transactions|first as first_tx %}
+                    {% if first_tx and first_tx.is_installment and first_tx.installment_group %}
+                    <form method="POST" action="{% url 'finance:delete_installment_group' first_tx.installment_group %}" style="display: inline;" onsubmit="return confirm('Excluir TODAS as parcelas deste grupo? Esta ação não pode ser desfeita.')">
+                        {% csrf_token %}
+                        <button type="submit" class="btn-danger-outline" style="font-size: 0.7rem; padding: 0.3rem 0.6rem; display: flex; align-items: center; gap: 0.3rem;">
+                            <i class="fa-solid fa-layer-group"></i> Excluir grupo
+                        </button>
+                    </form>
+                    {% endif %}
+                {% endwith %}
             </div>
         </div>
         <table>
@@ -195,5 +215,20 @@
             closeImportModal();
         }
     });
+
+    // Bulk actions dropdown
+    const bulkTrigger = document.getElementById('bulk-actions-trigger');
+    const bulkDropdown = document.getElementById('bulk-actions-dropdown');
+    if (bulkTrigger && bulkDropdown) {
+        bulkTrigger.addEventListener('click', function(e) {
+            e.stopPropagation();
+            bulkDropdown.style.display = bulkDropdown.style.display === 'block' ? 'none' : 'block';
+        });
+        document.addEventListener('click', function(e) {
+            if (!bulkTrigger.contains(e.target) && !bulkDropdown.contains(e.target)) {
+                bulkDropdown.style.display = 'none';
+            }
+        });
+    }
 </script>
 {% endblock %}

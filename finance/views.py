@@ -325,6 +325,23 @@ def finance_toggle_paid(request, pk):
 
 
 @login_required(login_url="/users/login/")
+@require_POST
+def finance_delete_installment_group(request, group_id):
+    """Deleta todas as parcelas de um grupo de parcelamento."""
+    transactions = Transaction.objects.filter(user=request.user, installment_group=group_id)
+    count = transactions.count()
+    if count == 0:
+        messages.info(request, "Nenhuma parcela encontrada para este grupo.")
+    else:
+        # Pega a descrição para a mensagem
+        first_tx = transactions.first()
+        desc = first_tx.description
+        transactions.delete()
+        messages.success(request, f"Grupo de parcelas \"{desc}\" ({count} parcelas) excluído com sucesso!")
+    return redirect("finance:list")
+
+
+@login_required(login_url="/users/login/")
 def finance_edit(request, pk):
     transaction = get_object_or_404(Transaction, pk=pk, user=request.user)
 

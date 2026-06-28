@@ -736,3 +736,77 @@ tr:last-child td {
 .installment-preview i {
     margin-right: 0.4rem;
 }
+
+/* Bulk Actions Dropdown */
+.bulk-actions {
+    background: none;
+    border: none;
+    padding: 0;
+    margin-bottom: 1rem;
+}
+
+.bulk-actions-dropdown {
+    animation: fadeIn 0.15s ease-out;
+}
+
+.bulk-actions-dropdown hr {
+    border-color: var(--border-color);
+    margin: 0;
+}
+
+.bulk-actions-dropdown .btn-danger-outline {
+    border: none;
+    background: none;
+    border-radius: 0;
+    padding: 0.6rem 1rem;
+    font-size: 0.85rem;
+    color: var(--accent-red);
+    transition: background 0.15s;
+    text-align: left;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+.bulk-actions-dropdown .btn-danger-outline:hover {
+    background: rgba(239, 68, 68, 0.08);
+    border-color: transparent;
+}
+
+.bulk-actions-dropdown .btn-danger-outline i {
+    width: 16px;
+    text-align: center;
+}
+
+.bulk-actions-dropdown p {
+    font-size: 0.7rem;
+    color: var(--text-secondary);
+    text-align: center;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Installment Group Delete Button */
+.btn-installment-group-delete {
+    background: transparent;
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: var(--accent-red);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.btn-installment-group-delete:hover {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: var(--accent-red);
+}

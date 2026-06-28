@@ -544,3 +544,46 @@ Sem configuração de SMTP, usa `console.EmailBackend` (imprime no log do contai
 **Validação adicional recomendada (futuro):**
 - Adicionar `unique=True` no email via migration customizada ou `User.email` unique constraint
 - Ou validar unicidade no `CadastroForm.clean_email()`
+
+---
+
+### 27. Exclusão em Massa Mais Sutil + Exclusão de Grupo de Parcelas
+
+**Data:** Junho 2026
+
+**Descrição:** As ações de exclusão em massa ("Excluir todas as despesas" e "Excluir todas as receitas") estavam muito visíveis na listagem, ocupando espaço e distraindo. Foram movidas para um dropdown discreto ("Ações de exclusão"). Além disso, implementada a funcionalidade de excluir **todo o grupo de parcelas** de uma vez — útil para cancelar uma compra parcelada inteira.
+
+**Arquivos alterados:**
+
+| Arquivo | Mudança |
+|---|---|
+| `templates/finance_list.html` | Bulk actions convertidos em dropdown colapsável; botão "Excluir grupo" adicionado no cabeçalho de cada mês (apenas quando há parcelas) |
+| `finance/views.py` | Nova view `finance_delete_installment_group` para deletar todas as transações com mesmo `installment_group` |
+| `finance/urls.py` | Nova rota `installment-group/<uuid:group_id>/delete/` |
+| `static/css/style.css` | Estilos para dropdown `.bulk-actions-dropdown` e botão sutil `.btn-secondary` para trigger |
+
+**Detalhes técnicos:**
+
+**1. Bulk Actions (Excluir por tipo) — mais sutis:**
+- Antes: Dois botões vermelhos (`btn-danger-outline`) sempre visíveis na área `.bulk-actions`
+- Agora: Um único botão discreto "Ações de exclusão" (`btn-secondary`, cor `var(--text-secondary)`, tamanho menor) que abre dropdown ao clicar
+- Dropdown posicionado `position: absolute; right: 0` com sombra, borda, fundo `var(--bg-card)`
+- Opções no dropdown: "Excluir todas as despesas" e "Excluir todas as receitas" — mesmas views, mesma proteção CSRF, mesma confirmação JS
+- Fecha ao clicar fora (`document.addEventListener('click'...)`)
+
+**2. Excluir Grupo de Parcelas:**
+- No cabeçalho de cada mês agrupado, se a primeira transação do grupo tiver `is_installment=True` e `installment_group` definido, aparece botão "Excluir grupo"
+- View `finance_delete_installment_group`: filtra `Transaction.objects.filter(user=request.user, installment_group=group_id)` e deleta em lote
+- Mensagem de sucesso: `Grupo de parcelas "Descrição" (N parcelas) excluído com sucesso!`
+- Rota: `POST /finance/installment-group/<uuid:group_id>/delete/` com nome `finance:delete_installment_group`
+- Confirmação JS: `onclick="return confirm('Excluir TODAS as parcelas deste grupo? Esta ação não pode ser desfeita.')"`
+
+**Impacto UX:**
+- Listagem mais limpa — ações perigosas escondidas até necessárias
+- Fluxo natural: usuário vê parcelamento (badge "1/12") → quer cancelar tudo → clica "Excluir grupo" no cabeçalho do mês
+- Elimina necessidade de excluir parcela por parcela manualmente
+
+**Segurança:**
+- Ambas views usam `@require_POST` + `@login_required` + filtro `user=request.user`
+- CSRF token obrigatório
+- Confirmação JavaScript antes de enviar (dupla proteção: JS + view valida POST)

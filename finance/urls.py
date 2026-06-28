@@ -12,4 +12,5 @@ urlpatterns = [
     path("<int:pk>/toggle-paid/", views.finance_toggle_paid, name="toggle_paid"),
     path("export-csv/", views.export_csv, name="export_csv"),
     path("import-csv/", views.import_csv, name="import_csv"),
+    path("installment-group/<uuid:group_id>/delete/", views.finance_delete_installment_group, name="delete_installment_group"),
 ]
