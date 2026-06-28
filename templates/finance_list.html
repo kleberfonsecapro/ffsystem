@@ -50,27 +50,41 @@
                 </thead>
                 <tbody>
                     {% for tx in group.transactions %}
-                    <tr>
+                    <tr class="{% if tx.paid %}paid-row{% endif %}">
                         <td>{{ tx.date|date:"d M Y" }}</td>
                         <td style="font-weight: 500;">
+                            {% if tx.paid %}<s>{% endif %}
                             {{ tx.description }}
+                            {% if tx.paid %}</s>{% endif %}
                             {% if tx.is_installment %}
                             <span class="badge badge-installment">{{ tx.installment_number }}/{{ tx.installment_total }}</span>
                             {% endif %}
                         </td>
                         <td>{{ tx.category }}</td>
                         <td>
-                            {% if tx.type == 'receita' %}
+                            {% if tx.paid %}
+                                <span class="badge badge-paid">Paga</span>
+                            {% elif tx.type == 'receita' %}
                                 <span class="badge badge-income">Receita</span>
                             {% else %}
                                 <span class="badge badge-expense">Despesa</span>
                             {% endif %}
                         </td>
-                        <td class="{% if tx.type == 'receita' %}text-green{% else %}text-red{% endif %}" style="font-weight: 600;">
+                        <td class="{% if tx.paid %}text-paid{% elif tx.type == 'receita' %}text-green{% else %}text-red{% endif %}" style="font-weight: 600;">
                             R$ {{ tx.amount|floatformat:2 }}
                         </td>
                         <td>
                             <div style="display: flex; gap: 0.5rem; align-items: center;">
+                                <form method="POST" action="{% url 'finance:toggle_paid' tx.pk %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-paid" title="{% if tx.paid %}Desmarcar como paga{% else %}Marcar como paga{% endif %}">
+                                        {% if tx.paid %}
+                                            <i class="fa-solid fa-rotate-left"></i>
+                                        {% else %}
+                                            <i class="fa-solid fa-check"></i>
+                                        {% endif %}
+                                    </button>
+                                </form>
                                 <a href="{% url 'finance:edit' tx.pk %}" class="btn-edit" title="Editar">
                                     <i class="fa-solid fa-pen-to-square"></i>
                                 </a>

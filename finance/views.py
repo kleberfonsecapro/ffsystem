@@ -95,6 +95,17 @@ def finance_delete(request, pk):
     messages.success(request, "Transação excluída com sucesso!")
     return redirect("finance:list")
 
+
+@login_required(login_url="/users/login/")
+@require_POST
+def finance_toggle_paid(request, pk):
+    transaction = get_object_or_404(Transaction, pk=pk, user=request.user)
+    transaction.paid = not transaction.paid
+    transaction.save()
+    status = "paga" if transaction.paid else "não paga"
+    messages.success(request, f"Transação marcada como {status}!")
+    return redirect("finance:list")
+
 @login_required(login_url="/users/login/")
 def finance_edit(request, pk):
     transaction = get_object_or_404(Transaction, pk=pk, user=request.user)

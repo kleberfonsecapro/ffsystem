@@ -211,4 +211,18 @@
 
 ---
 
+### 16. Status "Paga" para Transações
+**Data:** Junho 2026
+**Problema:** Não era possível marcar uma despesa como paga, dificultando o controle do que já foi quitado.
+**Solução:** Adicionado campo booleano `paid` ao model `Transaction`. Na listagem, cada transação tem um botão verde (✓) para marcar como paga / desmarcar. Transações pagas aparecem com opacidade reduzida, descrição tachada, e badge "Paga" no lugar do tipo. O botão de toggle é um POST (segue o padrão de delete).
+**Arquivos envolvidos:**
+- `finance/models.py` — campo `paid = BooleanField(default=False)`
+- `finance/migrations/0002_transaction_installment_group_and_more.py` — migração com o novo campo
+- `finance/views.py` — view `finance_toggle_paid`
+- `finance/urls.py` — rota `<int:pk>/toggle-paid/`
+- `templates/finance_list.html` — botão toggle + badge + classe paid-row
+- `static/css/style.css` — classes `.btn-paid`, `.paid-row`, `.badge-paid`, `.text-paid`
+
+---
+
 *Documentado em Junho 2026*

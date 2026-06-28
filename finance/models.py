@@ -32,6 +32,7 @@ class Transaction(models.Model):
     type = models.CharField(max_length=10, choices=TYPE_CHOICES, verbose_name="tipo")
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="criado em")
 
+    paid = models.BooleanField(default=False, verbose_name="paga")
     is_installment = models.BooleanField(default=False, verbose_name="parcelado")
     installment_total = models.IntegerField(null=True, blank=True, verbose_name="total de parcelas")
     installment_number = models.IntegerField(null=True, blank=True, verbose_name="parcela atual")

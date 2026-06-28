@@ -328,6 +328,43 @@ tr:last-child td {
     background: rgba(79, 70, 229, 0.15);
 }
 
+.btn-paid {
+    background: none;
+    border: none;
+    color: var(--accent-green);
+    cursor: pointer;
+    padding: 0.4rem 0.6rem;
+    border-radius: 6px;
+    transition: all 0.2s;
+    font-size: 1rem;
+}
+
+.btn-paid:hover {
+    background: rgba(16, 185, 129, 0.15);
+}
+
+.paid-row {
+    opacity: 0.55;
+}
+
+.paid-row td {
+    text-decoration: none;
+}
+
+.paid-row s {
+    text-decoration: line-through;
+    text-decoration-color: var(--accent-green);
+}
+
+.badge-paid {
+    background: rgba(16, 185, 129, 0.15);
+    color: var(--accent-green);
+}
+
+.text-paid {
+    color: var(--accent-green);
+}
+
 .badge-income {
     background: rgba(16, 185, 129, 0.1);
     color: var(--accent-green);

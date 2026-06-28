@@ -8,4 +8,5 @@ urlpatterns = [
     path("add/", views.finance_add, name="add"),
     path("<int:pk>/delete/", views.finance_delete, name="delete"),
     path("<int:pk>/edit/", views.finance_edit, name="edit"),
+    path("<int:pk>/toggle-paid/", views.finance_toggle_paid, name="toggle_paid"),
 ]
