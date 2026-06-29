@@ -104,28 +104,36 @@
 (function() {
     var deferredPrompt = null;
     var installBtn = document.getElementById('pwa-install-btn');
+    var fallbackEl = document.getElementById('pwa-fallback');
 
     window.addEventListener('beforeinstallprompt', function(e) {
         e.preventDefault();
         deferredPrompt = e;
-        if (installBtn) installBtn.classList.remove('pwa-hidden');
     });
 
     window.addEventListener('appinstalled', function() {
         deferredPrompt = null;
-        if (installBtn) installBtn.classList.add('pwa-hidden');
+        if (installBtn) installBtn.style.display = 'none';
+        if (fallbackEl) fallbackEl.style.display = 'none';
     });
 
     if (installBtn) {
         installBtn.addEventListener('click', function() {
-            if (!deferredPrompt) return;
-            deferredPrompt.prompt();
-            deferredPrompt.userChoice.then(function(choiceResult) {
-                if (choiceResult.outcome === 'accepted') {
-                    installBtn.classList.add('pwa-hidden');
+            if (deferredPrompt) {
+                deferredPrompt.prompt();
+                deferredPrompt.userChoice.then(function(choiceResult) {
+                    if (choiceResult.outcome === 'accepted') {
+                        installBtn.style.display = 'none';
+                        if (fallbackEl) fallbackEl.style.display = 'none';
+                    }
+                    deferredPrompt = null;
+                });
+            } else {
+                if (fallbackEl) {
+                    installBtn.style.display = 'none';
+                    fallbackEl.style.display = 'block';
                 }
-                deferredPrompt = null;
-            });
+            }
         });
     }
 

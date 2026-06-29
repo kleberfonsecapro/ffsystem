@@ -38,9 +38,12 @@
             <a href="{% url 'users:register' %}" style="color: var(--accent-blue); text-decoration: none; font-weight: 600;">Cadastre-se</a>
         </div>
 
-        <button id="pwa-install-btn" class="pwa-install-btn pwa-hidden">
+        <button id="pwa-install-btn" class="pwa-install-btn">
             <i class="fa-solid fa-download"></i> Instalar App
         </button>
+        <div id="pwa-fallback" class="pwa-fallback" style="display: none;">
+            <i class="fa-solid fa-info-circle"></i> Para instalar, use o menu do navegador: <strong>Compartilhar &rarr; Adicionar à Tela Inicial</strong>
+        </div>
     </div>
 </div>
 {% endblock %}
