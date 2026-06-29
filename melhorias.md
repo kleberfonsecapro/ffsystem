@@ -449,6 +449,31 @@ Sem configuração de SMTP, usa `console.EmailBackend` (imprime no log do contai
 
 ---
 
+### 44. Desabilitar Cadastro Público e Recuperação de Senha
+
+**Data:** Junho 2026
+
+**Descrição:** Comentados os links "Esqueci minha senha" e "Cadastre-se" na tela de login para impedir que usuários externos se cadastrem ou solicitem reset de senha. O cadastro e recuperação só podem ser feitos pelo admin via `/admin/`.
+
+**Arquivos alterados:**
+
+| Arquivo | Mudança |
+|---|---|
+| `templates/login.html` | Links de "Esqueci minha senha" e "Cadastre-se" envolvidos em `{% comment %}...{% endcomment %}` |
+
+**Motivação:**
+- A aplicação é de uso familiar/controlado — não deve ter cadastro público
+- Recuperação de senha exige SMTP configurado (ainda não configurado em produção)
+- Admin cria novos usuários manualmente via `/admin/auth/user/add/`
+- Se necessário no futuro, reativar é só remover os `{% comment %}` tags
+
+**Próximos passos (quando reativar):**
+- Configurar SMTP no `.env` (EMAIL_HOST, EMAIL_PORT, etc.)
+- Garantir que `EMAIL_BACKEND` aponte para SMTP (não console)
+- Testar fluxo completo de reset
+
+---
+
 ## ⏳ A Implementar
 
 ### 9. Insight IA Real no Dashboard

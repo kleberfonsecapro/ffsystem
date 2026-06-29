@@ -29,6 +29,7 @@
             <button type="submit" class="btn-primary">Entrar</button>
         </form>
 
+        {% comment %} Desabilitado: sem cadastro público nem recuperação de senha por enquanto
         <div style="margin-top: 1rem; text-align: center;">
             <a href="{% url 'users:password_reset' %}" style="color: var(--accent-blue); text-decoration: none; font-size: 0.85rem;">Esqueci minha senha</a>
         </div>
@@ -37,6 +38,7 @@
             <span style="color: var(--text-secondary);">Ainda não tem uma conta?</span>
             <a href="{% url 'users:register' %}" style="color: var(--accent-blue); text-decoration: none; font-weight: 600;">Cadastre-se</a>
         </div>
+        {% endcomment %}
 
         <button id="pwa-install-btn" class="pwa-install-btn">
             <i class="fa-solid fa-download"></i> Instalar App
