@@ -16,10 +16,14 @@
 </div>
 
 <div class="card reports-filter-card">
-    <form method="GET" class="reports-filter-form">
+    <form method="GET" class="reports-filter-form" id="reports-form">
         <div class="reports-filter-header">
             <span class="reports-filter-label"><i class="fa-solid fa-calendar-days" style="color: var(--accent-blue);"></i> Selecione os meses para comparar</span>
             <div class="reports-filter-actions">
+                <button type="button" class="reports-select-all-btn" id="select-all-btn" title="Selecionar todos os meses">
+                    <i class="fa-regular fa-square-check"></i> Todos
+                </button>
+                <span class="reports-filter-count" id="selected-count">{{ selected_months|length }} selecionado{{ selected_months|length|pluralize:'s' }}</span>
                 <button type="submit" class="btn-primary">
                     <i class="fa-solid fa-arrow-right-arrow-left"></i> Comparar
                 </button>
@@ -35,7 +39,7 @@
             <label class="reports-month-card {% if m|date:'Y-m' in selected_months %}selected{% endif %}">
                 <input type="checkbox" name="meses" value="{{ m|date:'Y-m' }}"
                        {% if m|date:'Y-m' in selected_months %}checked{% endif %}
-                       onchange="this.closest('label').classList.toggle('selected')">
+                       onchange="this.closest('label').classList.toggle('selected'); updateCountAndSelectAll();">
                 <span class="reports-month-name">{{ m|date:'M' }}</span>
                 <span class="reports-month-year">{{ m|date:'Y' }}</span>
             </label>
@@ -199,20 +203,47 @@
 {% endif %}
 
 <script>
+function updateCountAndSelectAll() {
+    var checkboxes = document.querySelectorAll('.reports-month-card input[type="checkbox"]');
+    var form = document.querySelector('.reports-filter-form');
+    var countEl = document.getElementById('selected-count');
+    var selectAllBtn = document.getElementById('select-all-btn');
+
+    var checked = Array.from(checkboxes).filter(function(c) { return c.checked; });
+    var anyChecked = checked.length > 0;
+
+    if (countEl) countEl.textContent = checked.length + ' selecionado' + (checked.length !== 1 ? 's' : '');
+    if (form) form.querySelector('button[type="submit"]').disabled = !anyChecked;
+
+    if (selectAllBtn) {
+        var allChecked = checked.length === checkboxes.length;
+        if (allChecked) {
+            selectAllBtn.innerHTML = '<i class="fa-regular fa-rectangle-xmark"></i> Limpar todos';
+            selectAllBtn.classList.add('active');
+        } else {
+            selectAllBtn.innerHTML = '<i class="fa-regular fa-square-check"></i> Todos';
+            selectAllBtn.classList.remove('active');
+        }
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     var checkboxes = document.querySelectorAll('.reports-month-card input[type="checkbox"]');
     var form = document.querySelector('.reports-filter-form');
+    var selectAllBtn = document.getElementById('select-all-btn');
 
-    checkboxes.forEach(function(cb) {
-        cb.addEventListener('change', function() {
-            var anyChecked = Array.from(checkboxes).some(function(c) { return c.checked; });
-            if (anyChecked) form.querySelector('button[type="submit"]').disabled = false;
-            else form.querySelector('button[type="submit"]').disabled = true;
+    updateCountAndSelectAll();
+
+    if (selectAllBtn) {
+        selectAllBtn.addEventListener('click', function() {
+            var allChecked = Array.from(checkboxes).every(function(c) { return c.checked; });
+            checkboxes.forEach(function(cb) {
+                cb.checked = !allChecked;
+                cb.closest('label').classList.toggle('selected', !allChecked);
+            });
+            updateCountAndSelectAll();
         });
-    });
-
-    var anyChecked = Array.from(checkboxes).some(function(c) { return c.checked; });
-    if (form) form.querySelector('button[type="submit"]').disabled = !anyChecked;
+    }
 });
 </script>
 {% endblock %}

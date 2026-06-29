@@ -918,6 +918,46 @@ Sem configuração de SMTP, usa `console.EmailBackend` (imprime no log do contai
 
 ---
 
+### 40. Reports: botão "Selecionar todos" + design moderno
+
+**Data:** Junho 2026
+
+**Descrição:** Adicionado toggle "Selecionar todos" / "Limpar todos" no seletor de meses + melhorias visuais com glassmorphism, gradientes e micro-interações.
+
+**Arquivos alterados:**
+
+| Arquivo | Mudança |
+|---|---|
+| `templates/finance_reports.html` | Botão "Todos" com toggle select/deselect, contador de seleção, JS `updateCountAndSelectAll()` |
+| `static/css/style.css` | `.card::before` com borda gradiente sutil; `.reports-select-all-btn`; `.reports-filter-count`; `.reports-month-card` com checkmark, sombra hover, gradiente selected; `.reports-summary-card::after` com barra gradiente no topo; barras income/expense com `linear-gradient`; títulos de tabela com cor mais suave; evolução com barra mais alta e gradiente |
+
+**Detalhes técnicos:**
+
+**1. Botão "Todos":**
+- Um único botão que alterna entre "Selecionar todos" (icone square-check) e "Limpar todos" (ícone rectangle-xmark + classe .active com cor vermelha)
+- Atualiza todos os checkboxes e labels em uma única ação
+- Estado sincronizado com contador de seleção: se todos marcados, botão vira "Limpar todos"
+
+**2. Contador de seleção:**
+- Badge `.reports-filter-count` exibe "N selecionado(s)" em tempo real
+- Atualizado via JS a cada mudança de checkbox
+
+**3. Design visual:**
+- `.card::before` com `mask-composite: exclude` para criar borda gradiente sutil (blue→transparent→purple) sem afetar conteúdo
+- `.reports-month-card.selected` com gradiente de fundo (blue→purple) e glow via box-shadow
+- `.reports-month-card.selected::after` com checkmark (FontAwesome) no canto
+- `.reports-summary-card::after` com barra gradiente horizontal no topo (3px, blue→purple)
+- `.reports-bar-income` e `.reports-bar-expense` com gradiente horizontal
+- `.evolution-up` / `.evolution-down` com gradiente horizontal para barras mais vibrantes
+- Texto de título de tabela com `--text-secondary` (mais suave que azul)
+
+**4. Micro-interações:**
+- Hover nos cards de mês: `translateY(-1px)` + `box-shadow` com glow azul
+- Transições suaves em todas as propriedades animáveis
+- Card summary com ::after barra gradiente para identidade visual consistente
+
+---
+
 ### 39. Relatórios Comparativos com Exportação PDF
 
 **Data:** Junho 2026
@@ -939,7 +979,7 @@ Sem configuração de SMTP, usa `console.EmailBackend` (imprime no log do contai
 | `finance/views.py` | View `finance_reports` (render HTML) e `finance_reports_pdf` (gera PDF com WeasyPrint); imports `Sum`, `render_to_string`, `HTML` |
 | `finance/urls.py` | Rotas `reports/` e `reports/pdf/` |
 | `templates/base.html` | Link "Relatórios" na sidebar (com ícone chart-column) |
-| `static/css/style.css` | Estilos para `select[multiple]` (dark theme) e opções selecionadas |
+| `static/css/style.css` | Estilos para cards de meses, tabelas comparativas, barras de progresso, evolução, gradiente sutil nas bordas dos cards |
 | `requirements.txt` | Adicionado `weasyprint==69.0` |
 | `Dockerfile` | Adicionados pacotes do sistema: `libpango-1.0-0`, `libpangocairo-1.0-0`, `libgdk-pixbuf-2.0-0`, `libffi-dev`, `libcairo2` |
 
@@ -973,8 +1013,72 @@ Sem configuração de SMTP, usa `console.EmailBackend` (imprime no log do contai
 - PDF gerado apenas com dados do usuário logado
 
 **5. UX:**
-- Multi-select nativo do HTML (`<select multiple size="6">`) — sem dependências JS
-- Ctrl+Click para selecionar/desselecionar meses individualmente
-- Dica visual: opções selecionadas ficam com fundo azul (`option:checked`)
+- Multi-select substituído por cards clicáveis com checkbox estilizado (hidden input + label)
+- Cards selecionados: borda azul, fundo com gradiente, checkmark no canto superior direito
+- Cards: hover com sombra e translateY para feedback visual
+- Botão "Comparar" desabilitado quando nenhum mês selecionado
+- Botão "Limpar" para resetar filtros rapidamente
 - Botão PDF só aparece quando há meses selecionados
 - Tabelas com `overflow-x: auto` para mobile
+
+---
+
+### 41. Página de Análise Financeira (client-side puro)
+
+**Data:** Junho 2026
+
+**Descrição:** Nova página de análise financeira 100% client-side seguindo o padrão do dashboard de orçamento familiar de referência. Toda a lógica de filtro, KPIs, gráfico e heatmap roda no navegador com dados reais serializados pela view.
+
+**Arquivos criados:**
+
+| Arquivo | Descrição |
+|---|---|
+| `templates/finance_analysis.html` | Template SPA-like com seletor de meses (toggle buttons), 4 KPIs, gráfico Observable Plot, heatmap, projeção de metas |
+
+**Arquivos alterados:**
+
+| Arquivo | Mudança |
+|---|---|
+| `finance/views.py` | View `finance_analysis` serializa todas as transações em array flat `BUDGET_DATA` + lists de meses/categorias → 4 variáveis JSON |
+| `finance/urls.py` | Nova rota `analysis/` |
+| `templates/base.html` | Link "Análise" na sidebar; blocos `{% block extra_head %}` e `{% block extra_scripts %}` |
+| `static/css/style.css` | Estilos para `.analysis-*` (botões de mês toggle pill, KPI cards, grid 2fr+1fr, chart, heatmap, goals), responsivo |
+
+**Detalhes técnicos:**
+
+**1. Arquitetura (cópia do código de referência):**
+- View envia 4 JSONs: `BUDGET_DATA` (flat `{month, category, type, value}`), `MONTH_KEYS`, `MONTH_LABELS`, `CATEGORIES`
+- Template carrega tudo em `const` no `{% block extra_scripts %}`
+- `init()` → `renderMonthFilters()` + `updateDashboard()`
+- `toggleMonth(month)` atualiza `selectedMonths[]`, re-renderiza botões e dashboard
+- `updateDashboard()` filtra `BUDGET_DATA` pelos meses selecionados → `updateKPIs()` + `renderChart()` + `renderHeatmapTable()` + `renderGoals()`
+- Zero page reload — tudo client-side (exatamente como o referência)
+
+**2. KPIs:**
+- Média de Receitas / Despesas: `total / numMonths`
+- Mês mais econômico: maior saldo (`inc - exp`) entre os meses selecionados
+- Taxa de Poupança: `avgSavings / avgIncome * 100`, com barra de progresso colorida (>20% verde, >0% azul, negativa vermelha)
+
+**3. Gráfico (Observable Plot):**
+- `Plot.lineY` com `curve: monotone-x` para linhas suaves
+- `Plot.dot` com `tip: true` para tooltip ao passar mouse
+- `Plot.text` com `selectLast` para label da categoria no final da linha
+- Tema escuro: `background: transparent`, texto `#cbd5e1`
+- Re-renderiza em `resize` para adaptar ao container
+
+**4. Heatmap:**
+- Categorias como linhas, meses como colunas
+- Destaque `.cell-peak` no valor máximo de cada linha (pico de gasto)
+- Coluna "Média" ao final
+- Zero se não há despesa na categoria/mês
+
+**5. Metas (simuladas):**
+- 3 metas fixas: Reserva de Emergência (R$ 20k), Viagem (R$ 5k), Troca de Carro (R$ 15k)
+- Projeção: `remaining / (avgSavings * 0.3)` — quantos meses para atingir
+- Barra de progresso colorida por meta (verde, azul, indigo)
+
+**6. Dependências:**
+- D3.js v7 + Observable Plot 0.6 via CDN no `<head>`
+
+**7. Segurança:**
+- `@login_required`, filtro `user=request.user`, `DecimalEncoder` para serialização segura

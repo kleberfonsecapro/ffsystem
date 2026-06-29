@@ -2,6 +2,7 @@ import csv
 import io
 import uuid
 from datetime import datetime
+import json
 from decimal import Decimal, InvalidOperation
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
@@ -471,6 +472,60 @@ def finance_reports(request):
         "category_rows": category_rows,
     }
     return render(request, "finance_reports.html", context)
+
+
+class DecimalEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Decimal):
+            return float(obj)
+        return super().default(obj)
+
+
+@login_required(login_url="/users/login/")
+def finance_analysis(request):
+    """Painel analítico — dados serializados para renderização client-side."""
+    user_transactions = Transaction.objects.filter(user=request.user)
+
+    months_qs = user_transactions.dates("date", "month", order="ASC")
+
+    # Mapear mês/ano para label curta
+    month_map = {}
+    for dt in months_qs:
+        key = dt.strftime("%Y-%m")
+        label = dt.strftime("%b").capitalize()
+        month_map[key] = label
+
+    all_month_keys = sorted(month_map.keys())
+
+    # Construir budget_data flat (mesmo formato do código de referência)
+    budget_data = []
+    categories_set = set()
+
+    for tx in user_transactions.select_related("category_ref"):
+        key = tx.date.strftime("%Y-%m")
+        if key not in month_map:
+            continue
+        label = month_map[key]
+        cat_name = tx.category_display
+        categories_set.add(cat_name)
+        tipo = "income" if tx.type == "receita" else "expense"
+        budget_data.append({
+            "month": label,
+            "month_key": key,
+            "category": cat_name,
+            "type": tipo,
+            "value": float(tx.amount),
+        })
+
+    categories_list = sorted(categories_set)
+
+    context = {
+        "budget_data_json": json.dumps(budget_data, cls=DecimalEncoder),
+        "months_json": json.dumps(all_month_keys),
+        "month_labels_json": json.dumps([month_map[k] for k in all_month_keys]),
+        "categories_json": json.dumps(categories_list),
+    }
+    return render(request, "finance_analysis.html", context)
 
 
 @login_required(login_url="/users/login/")

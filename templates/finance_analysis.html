@@ -1,0 +1,352 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Análise Financeira - SmartFinance AI{% endblock %}
+
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
+<script src="https://cdn.jsdelivr.net/npm/@observablehq/plot@0.6"></script>
+{% endblock %}
+
+{% block content %}
+<div class="topbar">
+    <h1 class="page-title"><i class="fa-solid fa-chart-pie" style="color: var(--accent-blue);"></i> Análise Financeira</h1>
+</div>
+
+<div class="card analysis-filter-card">
+    <h2 class="analysis-filter-heading">Selecione os Meses para Análise</h2>
+    <div class="analysis-months-grid" id="month-filters"></div>
+</div>
+
+<div class="analysis-kpi-grid" id="kpi-grid" style="display: none;">
+    <div class="card analysis-kpi-card">
+        <span class="analysis-kpi-label">Média de Receitas</span>
+        <span class="analysis-kpi-value" id="kpi-income">R$ 0,00</span>
+        <span class="analysis-kpi-badge badge-income"><i class="fa-solid fa-arrow-up"></i> Positivo</span>
+    </div>
+    <div class="card analysis-kpi-card">
+        <span class="analysis-kpi-label">Média de Despesas</span>
+        <span class="analysis-kpi-value" id="kpi-expense">R$ 0,00</span>
+        <span class="analysis-kpi-badge">No período selecionado</span>
+    </div>
+    <div class="card analysis-kpi-card">
+        <span class="analysis-kpi-label">Mês mais econômico</span>
+        <span class="analysis-kpi-value" id="kpi-best-month">-</span>
+        <span class="analysis-kpi-badge" id="kpi-best-saved">Maior saldo positivo</span>
+    </div>
+    <div class="card analysis-kpi-card">
+        <span class="analysis-kpi-label">Taxa de Poupança</span>
+        <span class="analysis-kpi-value" id="kpi-savings">0%</span>
+        <div class="analysis-kpi-bar-track">
+            <div class="analysis-kpi-bar-fill" id="kpi-savings-bar" style="width: 0%;"></div>
+        </div>
+    </div>
+</div>
+
+<div class="analysis-grid-main" id="analysis-main" style="display: none;">
+    <div class="card analysis-chart-card">
+        <div class="analysis-section-head">
+            <h3 class="analysis-section-title">Evolução das Despesas</h3>
+            <span class="analysis-section-badge">Tendência (Linha)</span>
+        </div>
+        <div id="chart-container"></div>
+    </div>
+
+    <div class="card analysis-goals-card">
+        <h3 class="analysis-section-title">Projeção de Metas</h3>
+        <p class="analysis-goals-subtitle">Baseado no ritmo de economia dos <strong id="goal-months-count">0</strong> meses selecionados.</p>
+        <div id="goals-container"></div>
+    </div>
+</div>
+
+<div class="card analysis-table-card" id="analysis-table" style="display: none;">
+    <div class="analysis-section-head">
+        <h3 class="analysis-section-title">Matriz de Despesas (Mapa de Calor)</h3>
+        <span class="analysis-section-badge">Picos de gasto</span>
+    </div>
+    <div class="table-container">
+        <table class="analysis-heatmap-table" id="heatmap-table">
+            <thead id="heatmap-head">
+                <tr>
+                    <th class="analysis-th-label">Categoria</th>
+                </tr>
+            </thead>
+            <tbody id="heatmap-body"></tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+const BUDGET_DATA = {{ budget_data_json|safe }};
+const MONTH_KEYS = {{ months_json|safe }};
+const MONTH_LABELS = {{ month_labels_json|safe }};
+const CATEGORIES = {{ categories_json|safe }};
+
+const MONTHS = MONTH_LABELS;
+const CATEGORIES_MAP = CATEGORIES.map(function(c) { return { id: c, name: c, type: 'expense' }; });
+
+const GOALS = [
+    { name: 'Reserva de Emergência', target: 20000, current: 12000, color: 'bar-emerald' },
+    { name: 'Viagem de Férias', target: 5000, current: 1500, color: 'bar-sky' },
+    { name: 'Troca do Carro', target: 15000, current: 1500, color: 'bar-indigo' }
+];
+
+var selectedMonths = MONTHS.slice();
+
+function formatBRL(val) {
+    return 'R$ ' + val.toFixed(2).replace('.', ',');
+}
+
+function init() {
+    renderMonthFilters();
+    updateDashboard();
+}
+
+function renderMonthFilters() {
+    var container = document.getElementById('month-filters');
+    container.innerHTML = '';
+    MONTHS.forEach(function(m) {
+        var btn = document.createElement('button');
+        var isActive = selectedMonths.includes(m);
+        btn.className = 'analysis-month-btn' + (isActive ? ' active' : '');
+        btn.textContent = m;
+        btn.onclick = function() { toggleMonth(m); };
+        container.appendChild(btn);
+    });
+}
+
+function toggleMonth(month) {
+    var idx = selectedMonths.indexOf(month);
+    if (idx >= 0) {
+        if (selectedMonths.length > 1) {
+            selectedMonths.splice(idx, 1);
+        }
+    } else {
+        selectedMonths.push(month);
+        selectedMonths.sort(function(a, b) { return MONTHS.indexOf(a) - MONTHS.indexOf(b); });
+    }
+    renderMonthFilters();
+    updateDashboard();
+}
+
+function updateDashboard() {
+    if (selectedMonths.length === 0) return;
+
+    var activeData = BUDGET_DATA.filter(function(d) { return selectedMonths.includes(d.month); });
+
+    document.getElementById('kpi-grid').style.display = 'grid';
+    document.getElementById('analysis-main').style.display = 'grid';
+    document.getElementById('analysis-table').style.display = 'block';
+
+    updateKPIs(activeData);
+    renderChart(activeData);
+    renderHeatmapTable(activeData);
+    renderGoals(activeData);
+}
+
+function updateKPIs(data) {
+    var numMonths = selectedMonths.length;
+    var totalIncome = 0, totalExpense = 0;
+    var monthlyBalances = {};
+
+    selectedMonths.forEach(function(m) { monthlyBalances[m] = { inc: 0, exp: 0 }; });
+
+    data.forEach(function(d) {
+        if (d.type === 'income') {
+            totalIncome += d.value;
+            monthlyBalances[d.month].inc += d.value;
+        } else {
+            totalExpense += d.value;
+            monthlyBalances[d.month].exp += d.value;
+        }
+    });
+
+    var avgInc = totalIncome / numMonths;
+    var avgExp = totalExpense / numMonths;
+    var avgSavings = avgInc - avgExp;
+    var savingsRate = avgInc > 0 ? ((avgSavings) / avgInc) * 100 : 0;
+
+    var bestMonth = '-';
+    var bestBalance = -Infinity;
+    for (var m in monthlyBalances) {
+        var bal = monthlyBalances[m].inc - monthlyBalances[m].exp;
+        if (bal > bestBalance) {
+            bestBalance = bal;
+            bestMonth = m;
+        }
+    }
+
+    document.getElementById('kpi-income').textContent = formatBRL(avgInc);
+    document.getElementById('kpi-expense').textContent = formatBRL(avgExp);
+    document.getElementById('kpi-best-month').textContent = bestMonth;
+    var bestSaved = document.getElementById('kpi-best-saved');
+    bestSaved.textContent = 'Saldo: ' + formatBRL(bestBalance);
+    bestSaved.style.color = bestBalance >= 0 ? 'var(--accent-green)' : 'var(--accent-red)';
+    document.getElementById('kpi-savings').textContent = Math.max(0, savingsRate).toFixed(1) + '%';
+    var bar = document.getElementById('kpi-savings-bar');
+    var rate = Math.max(0, savingsRate);
+    bar.style.width = Math.min(100, rate) + '%';
+    bar.style.background = rate > 20 ? 'var(--accent-green)' : (rate > 0 ? 'var(--accent-blue)' : 'var(--accent-red)');
+}
+
+function renderChart(data) {
+    var container = document.getElementById('chart-container');
+    container.innerHTML = '';
+
+    var expensesOnly = data.filter(function(d) { return d.type === 'expense'; });
+    if (expensesOnly.length === 0) return;
+
+    var xDomain = MONTHS.filter(function(m) { return selectedMonths.includes(m); });
+
+    try {
+        var plot = Plot.plot({
+            width: container.clientWidth,
+            height: 320,
+            marginTop: 20,
+            marginRight: 100,
+            marginBottom: 40,
+            marginLeft: 50,
+            style: {
+                background: 'transparent',
+                color: '#cbd5e1',
+                fontFamily: 'Inter, sans-serif',
+                fontSize: 12,
+            },
+            x: {
+                domain: xDomain,
+                label: null,
+                tickSize: 0,
+                tickPadding: 10,
+            },
+            y: {
+                grid: true,
+                label: 'Valor (R$)',
+                tickFormat: function(d) { return (d / 1000).toFixed(0) + 'k'; },
+            },
+            color: { legend: false, scheme: 'Observable10' },
+            marks: [
+                Plot.ruleY([0], { stroke: '#2a2a35' }),
+                Plot.lineY(expensesOnly, {
+                    x: 'month', y: 'value', stroke: 'category',
+                    strokeWidth: 3, curve: 'monotone-x'
+                }),
+                Plot.dot(expensesOnly, {
+                    x: 'month', y: 'value', fill: 'category',
+                    r: 5, stroke: '#1f1f27', strokeWidth: 2,
+                    tip: true,
+                    title: function(d) { return d.category + '\n' + d.month + ': ' + formatBRL(d.value); }
+                }),
+                Plot.text(expensesOnly, Plot.selectLast({
+                    x: 'month', y: 'value', z: 'category',
+                    text: 'category', textAnchor: 'start', dx: 10,
+                    fill: 'category', fontWeight: '600', stroke: 'none'
+                }))
+            ]
+        });
+        container.appendChild(plot);
+    } catch(e) {
+        container.innerHTML = '<p style="color: var(--text-secondary); padding: 2rem; text-align: center;">Não foi possível renderizar o gráfico.</p>';
+    }
+}
+
+function renderHeatmapTable(data) {
+    var head = document.getElementById('heatmap-head');
+    var body = document.getElementById('heatmap-body');
+
+    head.innerHTML = '<th class="analysis-th-label">Categoria</th>';
+    selectedMonths.forEach(function(m) {
+        head.innerHTML += '<th class="analysis-th-value">' + m + '</th>';
+    });
+    head.innerHTML += '<th class="analysis-th-value analysis-th-avg">Média</th>';
+
+    var expenseCats = {};
+    data.filter(function(d) { return d.type === 'expense'; }).forEach(function(d) {
+        if (!expenseCats[d.category]) expenseCats[d.category] = {};
+        expenseCats[d.category][d.month] = d.value;
+    });
+
+    var catNames = Object.keys(expenseCats).sort();
+    body.innerHTML = '';
+
+    catNames.forEach(function(cat) {
+        var tr = document.createElement('tr');
+        var html = '<td class="analysis-cell-label">' + cat + '</td>';
+
+        var values = [];
+        selectedMonths.forEach(function(m) {
+            values.push(expenseCats[cat][m] || 0);
+        });
+
+        var maxVal = Math.max.apply(null, values);
+        var sum = 0;
+
+        values.forEach(function(val, idx) {
+            sum += val;
+            var isHigh = val === maxVal && val > 0 && selectedMonths.length > 1;
+            html += '<td class="analysis-cell-value' + (isHigh ? ' cell-peak' : '') + '">'
+                + (val > 0 ? formatBRL(val) : '-') + '</td>';
+        });
+
+        var avg = sum / selectedMonths.length;
+        html += '<td class="analysis-cell-value analysis-cell-avg">' + formatBRL(avg) + '</td>';
+        tr.innerHTML = html;
+        body.appendChild(tr);
+    });
+}
+
+function renderGoals(data) {
+    var container = document.getElementById('goals-container');
+    document.getElementById('goal-months-count').textContent = selectedMonths.length;
+    container.innerHTML = '';
+
+    var totalInc = 0, totalExp = 0;
+    data.forEach(function(d) {
+        if (d.type === 'income') totalInc += d.value;
+        else totalExp += d.value;
+    });
+    var avgSavings = (totalInc - totalExp) / selectedMonths.length;
+
+    GOALS.forEach(function(goal) {
+        var percent = Math.min(100, (goal.current / goal.target) * 100);
+        var remaining = goal.target - goal.current;
+        var projectionHtml = '';
+
+        if (remaining <= 0) {
+            projectionHtml = '<span style="color: var(--accent-green); font-weight: 600;">Meta alcançada!</span>';
+        } else if (avgSavings > 0) {
+            var monthlyAllocation = avgSavings * 0.3;
+            var monthsLeft = Math.ceil(remaining / monthlyAllocation);
+            projectionHtml = 'Previsão: <span style="color: var(--text-primary); font-weight: 600;">' + monthsLeft + ' meses</span> (a este ritmo)';
+        } else {
+            projectionHtml = '<span style="color: var(--accent-red);">Saldo médio negativo ou zero. Revisar rota.</span>';
+        }
+
+        container.innerHTML += '<div class="analysis-goal-item">'
+            + '<div class="analysis-goal-head">'
+                + '<div>'
+                    + '<h4 class="analysis-goal-name">' + goal.name + '</h4>'
+                    + '<p class="analysis-goal-proj">' + projectionHtml + '</p>'
+                + '</div>'
+                + '<div class="analysis-goal-numbers">'
+                    + '<span class="analysis-goal-current">' + formatBRL(goal.current) + '</span>'
+                    + '<span class="analysis-goal-target"> / ' + formatBRL(goal.target) + '</span>'
+                + '</div>'
+            + '</div>'
+            + '<div class="analysis-kpi-bar-track">'
+                + '<div class="analysis-kpi-bar-fill ' + goal.color + '" style="width: ' + percent + '%;"></div>'
+            + '</div>'
+        + '</div>';
+    });
+}
+
+window.addEventListener('DOMContentLoaded', init);
+window.addEventListener('resize', function() {
+    if (selectedMonths.length > 0) {
+        var activeData = BUDGET_DATA.filter(function(d) { return selectedMonths.includes(d.month); });
+        renderChart(activeData);
+    }
+});
+</script>
+{% endblock %}

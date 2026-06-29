@@ -14,6 +14,7 @@
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" integrity="sha384-vsrfeLOOY6KuIYKDlmVH5UiBmgIdB1oEf7p01YgWHuqmOHfZr374+odEv96n9tNC" crossorigin="anonymous"></script>
+    {% block extra_head %}{% endblock %}
 </head>
 <body>
     {% if request.user.is_authenticated %}
@@ -37,6 +38,9 @@
                 </a></li>
                 <li><a href="{% url 'finance:reports' %}" class="{% if request.resolver_match.url_name == 'reports' %}active{% endif %}">
                     <i class="fa-solid fa-chart-column"></i> Relatórios
+                </a></li>
+                <li><a href="{% url 'finance:analysis' %}" class="{% if request.resolver_match.url_name == 'analysis' %}active{% endif %}">
+                    <i class="fa-solid fa-chart-pie"></i> Análise
                 </a></li>
                 <li><a href="{% url 'dashboard:settings' %}">
                     <i class="fa-solid fa-gear"></i> Configurações
@@ -93,6 +97,8 @@
     {% else %}
         {% block login_content %}{% endblock %}
     {% endif %}
+
+{% block extra_scripts %}{% endblock %}
 
 <script>
 (function() {

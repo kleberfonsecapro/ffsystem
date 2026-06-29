@@ -15,4 +15,5 @@ urlpatterns = [
     path("installment-group/<uuid:group_id>/delete/", views.finance_delete_installment_group, name="delete_installment_group"),
     path("reports/", views.finance_reports, name="reports"),
     path("reports/pdf/", views.finance_reports_pdf, name="reports_pdf"),
+    path("analysis/", views.finance_analysis, name="analysis"),
 ]
