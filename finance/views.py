@@ -8,7 +8,10 @@ from django.http import HttpResponse
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
+from django.db.models import Sum
 from django.db.models.functions import TruncMonth
+from django.template.loader import render_to_string
+from weasyprint import HTML
 from dateutil.relativedelta import relativedelta
 from .models import Transaction, Category
 from .forms import TransactionForm, CSVImportForm
@@ -413,3 +416,118 @@ def finance_edit(request, pk):
     else:
         form = TransactionForm(instance=transaction)
     return render(request, "finance_add.html", {"form": form, "editing": True})
+
+
+@login_required(login_url="/users/login/")
+def finance_reports(request):
+    """Relatório comparativo entre meses."""
+    user_transactions = Transaction.objects.filter(user=request.user)
+    months_available = (
+        user_transactions
+        .dates("date", "month", order="DESC")
+    )
+
+    selected_months = request.GET.getlist("meses")
+
+    months_data = []
+    all_categories = set()
+
+    for month_str in selected_months:
+        try:
+            year, month = int(month_str[:4]), int(month_str[5:7])
+        except (ValueError, IndexError):
+            continue
+        qs = user_transactions.filter(date__year=year, date__month=month)
+        income = qs.filter(type="receita").aggregate(t=Sum("amount"))["t"] or 0
+        expense = qs.filter(type="despesa").aggregate(t=Sum("amount"))["t"] or 0
+        cats = {}
+        for tx in qs:
+            cat_name = tx.category_display
+            all_categories.add(cat_name)
+            cats.setdefault(cat_name, {"income": 0, "expense": 0})
+            if tx.type == "receita":
+                cats[cat_name]["income"] += tx.amount
+            else:
+                cats[cat_name]["expense"] += tx.amount
+        months_data.append({
+            "month_str": f"{month:02d}/{year}",
+            "income": income,
+            "expense": expense,
+            "balance": income - expense,
+            "categories": cats,
+        })
+
+    category_rows = []
+    for cat in sorted(all_categories):
+        row = {"category": cat}
+        for md in months_data:
+            row[md["month_str"]] = md["categories"].get(cat, {"income": 0, "expense": 0})
+        category_rows.append(row)
+
+    context = {
+        "months_available": months_available,
+        "selected_months": selected_months,
+        "months_data": months_data,
+        "category_rows": category_rows,
+    }
+    return render(request, "finance_reports.html", context)
+
+
+@login_required(login_url="/users/login/")
+def finance_reports_pdf(request):
+    """Gera PDF do relatório comparativo usando WeasyPrint."""
+    user_transactions = Transaction.objects.filter(user=request.user)
+
+    selected_months = request.GET.getlist("meses")
+    if not selected_months:
+        latest = user_transactions.dates("date", "month", order="DESC").first()
+        if latest:
+            selected_months = [latest.strftime("%Y-%m")]
+
+    months_data = []
+    all_categories = set()
+
+    for month_str in selected_months:
+        try:
+            year, month = int(month_str[:4]), int(month_str[5:7])
+        except (ValueError, IndexError):
+            continue
+        qs = user_transactions.filter(date__year=year, date__month=month)
+        income = qs.filter(type="receita").aggregate(t=Sum("amount"))["t"] or 0
+        expense = qs.filter(type="despesa").aggregate(t=Sum("amount"))["t"] or 0
+        cats = {}
+        for tx in qs:
+            cat_name = tx.category_display
+            all_categories.add(cat_name)
+            cats.setdefault(cat_name, {"income": 0, "expense": 0})
+            if tx.type == "receita":
+                cats[cat_name]["income"] += tx.amount
+            else:
+                cats[cat_name]["expense"] += tx.amount
+        months_data.append({
+            "month_str": f"{month:02d}/{year}",
+            "income": income,
+            "expense": expense,
+            "balance": income - expense,
+            "categories": cats,
+        })
+
+    category_rows = []
+    for cat in sorted(all_categories):
+        row = {"category": cat}
+        for md in months_data:
+            row[md["month_str"]] = md["categories"].get(cat, {"income": 0, "expense": 0})
+        category_rows.append(row)
+
+    html_string = render_to_string("finance_reports_pdf.html", {
+        "months_data": months_data,
+        "category_rows": category_rows,
+        "selected_months": selected_months,
+        "username": request.user.username,
+    })
+
+    pdf = HTML(string=html_string, base_url=request.build_absolute_uri("/")).write_pdf()
+
+    response = HttpResponse(pdf, content_type="application/pdf")
+    response["Content-Disposition"] = 'attachment; filename="relatorio_financeiro.pdf"'
+    return response

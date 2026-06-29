@@ -855,6 +855,33 @@ tr:last-child td {
 
 /* ========== RESPONSIVE ========== */
 
+/* Reports */
+select[multiple] {
+    min-height: 150px;
+    padding: 0.5rem;
+    background: var(--bg-main);
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-primary);
+    font-size: 0.9rem;
+}
+select[multiple] option {
+    padding: 0.4rem 0.6rem;
+    border-radius: 4px;
+}
+select[multiple] option:checked {
+    background: var(--accent-blue);
+    color: white;
+}
+
+@media (max-width: 768px) {
+    select[multiple] {
+        min-width: 100%;
+        max-width: 100%;
+        min-height: 120px;
+    }
+}
+
 /* Modal */
 .modal {
     display: none;

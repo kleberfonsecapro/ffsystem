@@ -1,0 +1,98 @@
+{% load finance_extras %}
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório Financeiro - SmartFinance AI</title>
+    <style>
+        @page { margin: 2cm; size: A4 landscape; }
+        body { font-family: 'Inter', 'DejaVu Sans', sans-serif; font-size: 11px; color: #1a1a21; }
+        h1 { font-size: 18px; color: #4f46e5; margin-bottom: 0.25cm; }
+        h2 { font-size: 14px; color: #333; margin-top: 0.5cm; }
+        p { color: #666; margin-bottom: 0.5cm; }
+        table { width: 100%; border-collapse: collapse; margin-bottom: 0.5cm; }
+        th { background: #4f46e5; color: white; padding: 6px 8px; text-align: left; font-size: 10px; }
+        th.right { text-align: right; }
+        td { padding: 5px 8px; border-bottom: 1px solid #ddd; }
+        td.right { text-align: right; }
+        .green { color: #10b981; font-weight: 600; }
+        .red { color: #ef4444; font-weight: 600; }
+        .bold { font-weight: 700; }
+        .border-top { border-top: 2px solid #333; }
+        .footer { margin-top: 0.5cm; font-size: 9px; color: #999; text-align: center; }
+        tr:nth-child(even) td { background: #f9f9fb; }
+    </style>
+</head>
+<body>
+    <h1>Relatório Financeiro Comparativo</h1>
+    <p>Usuário: <strong>{{ username }}</strong> | Períodos: {% for m in selected_months %}{{ m }} {% endfor %}</p>
+
+    <h2>Resumo por Mês</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Indicador</th>
+                {% for md in months_data %}
+                <th class="right">{{ md.month_str }}</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Receitas</td>
+                {% for md in months_data %}
+                <td class="right green">R$ {{ md.income|floatformat:2 }}</td>
+                {% endfor %}
+            </tr>
+            <tr>
+                <td>Despesas</td>
+                {% for md in months_data %}
+                <td class="right red">R$ {{ md.expense|floatformat:2 }}</td>
+                {% endfor %}
+            </tr>
+            <tr>
+                <td class="bold">Saldo</td>
+                {% for md in months_data %}
+                <td class="right bold {% if md.balance >= 0 %}green{% else %}red{% endif %}">
+                    R$ {{ md.balance|floatformat:2 }}
+                </td>
+                {% endfor %}
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>Detalhamento por Categoria</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>Categoria</th>
+                {% for md in months_data %}
+                <th colspan="2" style="text-align: center;">{{ md.month_str }}</th>
+                {% endfor %}
+            </tr>
+            <tr>
+                <th></th>
+                {% for md in months_data %}
+                <th style="text-align: right; color: #10b981;">Rec.</th>
+                <th style="text-align: right; color: #ef4444;">Desp.</th>
+                {% endfor %}
+            </tr>
+        </thead>
+        <tbody>
+            {% for row in category_rows %}
+            <tr>
+                <td>{{ row.category }}</td>
+                {% for md in months_data %}
+                <td class="right green">R$ {{ row|get_item:md.month_str|get_item:'income'|floatformat:2 }}</td>
+                <td class="right red">R$ {{ row|get_item:md.month_str|get_item:'expense'|floatformat:2 }}</td>
+                {% endfor %}
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="footer">
+        SmartFinance AI — Relatório gerado em {% now "d/m/Y H:i" %}
+    </div>
+</body>
+</html>

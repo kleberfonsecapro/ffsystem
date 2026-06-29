@@ -915,3 +915,66 @@ Sem configuração de SMTP, usa `console.EmailBackend` (imprime no log do contai
 - `event.request.mode === "navigate"` → **network-first**: busca do servidor → cacheia resposta → retorna. Se rede falha → fallback para cache (offline mode)
 - `isStatic(url)` → **cache-first**: serve do cache instantaneamente, sem fetch
 - Demais requisições → **network-only**: nunca cacheia (APIs, admin, etc.)
+
+---
+
+### 39. Relatórios Comparativos com Exportação PDF
+
+**Data:** Junho 2026
+
+**Descrição:** Implementada página de relatórios financeiros comparativos entre meses, com tabela de resumo (receitas/despesas/saldo por mês) e detalhamento por categoria. Geração de PDF via WeasyPrint com layout profissional.
+
+**Arquivos criados:**
+
+| Arquivo | Descrição |
+|---|---|
+| `templates/finance_reports.html` | Página de relatórios com multi-select de meses, tabela resumo e tabela por categoria |
+| `templates/finance_reports_pdf.html` | Template otimizado para PDF (landscape, cores, tabelas) |
+| `finance/templatetags/finance_extras.py` | Filter `get_item` para acessar dicts no template |
+
+**Arquivos alterados:**
+
+| Arquivo | Mudança |
+|---|---|
+| `finance/views.py` | View `finance_reports` (render HTML) e `finance_reports_pdf` (gera PDF com WeasyPrint); imports `Sum`, `render_to_string`, `HTML` |
+| `finance/urls.py` | Rotas `reports/` e `reports/pdf/` |
+| `templates/base.html` | Link "Relatórios" na sidebar (com ícone chart-column) |
+| `static/css/style.css` | Estilos para `select[multiple]` (dark theme) e opções selecionadas |
+| `requirements.txt` | Adicionado `weasyprint==69.0` |
+| `Dockerfile` | Adicionados pacotes do sistema: `libpango-1.0-0`, `libpangocairo-1.0-0`, `libgdk-pixbuf-2.0-0`, `libffi-dev`, `libcairo2` |
+
+**Detalhes técnicos:**
+
+**1. Arquitetura dos Dados:**
+- `finance_reports()` recebe `meses` (GET list) → filtra `Transaction` por mês/ano
+- Para cada mês: agrega receitas/despesas totais (`Sum`) e quebra por categoria
+- `category_rows`: lista de dicts com `{category, month_str: {income, expense}}`
+- `months_data`: lista com `{month_str, income, expense, balance, categories}`
+
+**2. Template HTML (finance_reports.html):**
+- Multi-select para escolher múltiplos meses (Ctrl+Click)
+- Botão "Comparar" + "Limpar" filtros
+- Tabela "Resumo por Mês": Receitas | Despesas | Saldo (linhas) × meses (colunas)
+- Tabela "Detalhamento por Categoria": cada categoria × (Rec./Desp.) por mês
+- Botão "Exportar PDF" visível apenas quando há seleção
+- Usa filter `{% load finance_extras %}` → `{{ row|get_item:month_str }}`
+
+**3. Geração de PDF (finance_reports_pdf):**
+- Template isolado `finance_reports_pdf.html` com CSS próprio para impressão
+- `@page { margin: 2cm; size: A4 landscape; }` — paisagem para largura das tabelas
+- WeasyPrint: `HTML(string=html_string, base_url=...).write_pdf()`
+- `base_url` aponta para a raiz da aplicação para resolver URLs de assets
+- Response: `Content-Disposition: attachment; filename="relatorio_financeiro.pdf"`
+- Fallback: se nenhum mês selecionado, usa o mês mais recente com transações
+
+**4. Segurança:**
+- `@login_required` em ambas views
+- Filtro `user=request.user` em todas as queries
+- PDF gerado apenas com dados do usuário logado
+
+**5. UX:**
+- Multi-select nativo do HTML (`<select multiple size="6">`) — sem dependências JS
+- Ctrl+Click para selecionar/desselecionar meses individualmente
+- Dica visual: opções selecionadas ficam com fundo azul (`option:checked`)
+- Botão PDF só aparece quando há meses selecionados
+- Tabelas com `overflow-x: auto` para mobile
