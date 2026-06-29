@@ -87,7 +87,6 @@
     </div>
 
     {% if selected_type == "despesa_parcelada" %}
-        <!-- View for installment groups -->
         {% for group in grouped_transactions %}
         <div class="installment-group-card" style="margin-bottom: 1rem; padding: 1rem; background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 8px;">
             <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 1rem; flex-wrap: wrap; gap: 1rem;">
@@ -101,12 +100,14 @@
                 </div>
                 <div style="display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
                     <span style="color: var(--accent-red); font-weight: 600; font-size: 1.1rem;">R$ {{ group.total_amount|floatformat:2 }}</span>
+                    {% if group.group_id %}
                     <form method="POST" action="{% url 'finance:delete_installment_group' group.group_id %}" style="display: inline;" onsubmit="return confirm('Excluir TODAS as {{ group.installment_total }} parcelas de \"{{ group.description }}\"? Esta ação não pode ser desfeita.')">
                         {% csrf_token %}
                         <button type="submit" class="btn-danger-outline" style="font-size: 0.8rem; padding: 0.4rem 0.8rem; display: flex; align-items: center; gap: 0.4rem;">
                             <i class="fa-solid fa-trash-can"></i> Excluir todas
                         </button>
                     </form>
+                    {% endif %}
                 </div>
             </div>
             <div class="table-container">
@@ -162,7 +163,6 @@
         </div>
         {% endfor %}
     {% else %}
-        <!-- Normal monthly grouping view -->
         {% for group in grouped_transactions %}
         <div style="margin-bottom: 1.5rem;">
             <div style="display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 2px solid var(--border-color); margin-bottom: 0.5rem;">
@@ -190,4 +190,122 @@
                         <td style="font-weight: 500;">
                             {% if tx.paid %}<s>{% endif %}
                             {{ tx.description }}
-                            {% if tx.paid %}
+                            {% if tx.paid %}</s>{% endif %}
+                        </td>
+                        <td>{{ tx.category }}</td>
+                        <td>
+                            {% if tx.type == "receita" %}
+                            <span class="badge badge-income">Receita</span>
+                            {% elif tx.type == "despesa_parcelada" %}
+                            <span class="badge badge-installment">Parcelada</span>
+                            {% else %}
+                            <span class="badge badge-expense">Despesa</span>
+                            {% endif %}
+                        </td>
+                        <td class="{% if tx.type == 'receita' %}text-green{% else %}text-red{% endif %}" style="font-weight: 600;">
+                            R$ {{ tx.amount|floatformat:2 }}
+                        </td>
+                        <td>
+                            <div style="display: flex; gap: 0.5rem; align-items: center; justify-content: center;">
+                                <form method="POST" action="{% url 'finance:toggle_paid' tx.pk %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-paid" title="{% if tx.paid %}Desmarcar como paga{% else %}Marcar como paga{% endif %}" style="padding: 0.3rem 0.5rem;">
+                                        {% if tx.paid %}
+                                            <i class="fa-solid fa-rotate-left"></i>
+                                        {% else %}
+                                            <i class="fa-solid fa-check"></i>
+                                        {% endif %}
+                                    </button>
+                                </form>
+                                <a href="{% url 'finance:edit' tx.pk %}" class="btn-edit" title="Editar" style="padding: 0.3rem 0.5rem;">
+                                    <i class="fa-solid fa-pen-to-square"></i>
+                                </a>
+                                <form method="POST" action="{% url 'finance:delete' tx.pk %}" style="display: inline;" onsubmit="return confirm('Excluir \"{{ tx.description }}\"?')">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn-delete" title="Excluir" style="padding: 0.3rem 0.5rem;">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% empty %}
+        <div style="text-align: center; color: var(--text-secondary); padding: 2rem;">
+            Nenhuma transação encontrada.
+        </div>
+        {% endfor %}
+    {% endif %}
+</div>
+
+<div id="import-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Importar CSV</h3>
+            <button type="button" class="modal-close" id="close-import-modal">&times;</button>
+        </div>
+        <form method="POST" action="{% url 'finance:import_csv' %}" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="csv-file">Selecione o arquivo CSV</label>
+                <input type="file" name="file" id="csv-file" accept=".csv" required>
+            </div>
+            <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                <p><strong>Formato esperado (CSV delimitado por ponto e vírgula):</strong></p>
+                <p>Data;Descrição;Categoria;Tipo;Valor;Parcela;Paga</p>
+                <p><strong>Exemplo:</strong> 01/01/2026;Mercado Pago;Alimentação;despesa;150,00;1/12;Não</p>
+                <p><strong>Tipos:</strong> receita, despesa &nbsp;|&nbsp; <strong>Paga:</strong> Sim, Não &nbsp;|&nbsp; <strong>Parcela:</strong> deixe em branco se não for parcelado</p>
+            </div>
+            <button type="submit" class="btn-primary">Importar</button>
+        </form>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var openImportBtn = document.getElementById('open-import-modal');
+        var importModal = document.getElementById('import-modal');
+        var closeImportBtn = document.getElementById('close-import-modal');
+
+        if (openImportBtn && importModal && closeImportBtn) {
+            openImportBtn.addEventListener('click', function() {
+                importModal.style.display = 'flex';
+            });
+            closeImportBtn.addEventListener('click', function() {
+                importModal.style.display = 'none';
+            });
+            window.addEventListener('click', function(e) {
+                if (e.target == importModal) {
+                    importModal.style.display = 'none';
+                }
+            });
+        }
+
+        var bulkTrigger = document.getElementById('bulk-actions-trigger');
+        var bulkDropdown = document.getElementById('bulk-actions-dropdown');
+
+        if (bulkTrigger && bulkDropdown) {
+            bulkTrigger.addEventListener('click', function(e) {
+                e.stopPropagation();
+                var isVisible = bulkDropdown.style.display === 'block';
+                bulkDropdown.style.display = isVisible ? 'none' : 'block';
+            });
+            document.addEventListener('click', function(e) {
+                if (!bulkDropdown.contains(e.target) && e.target !== bulkTrigger) {
+                    bulkDropdown.style.display = 'none';
+                }
+            });
+        }
+
+        var filterSelects = document.querySelectorAll('.select-filter');
+        filterSelects.forEach(function(select) {
+            select.addEventListener('change', function() {
+                this.closest('form').submit();
+            });
+        });
+    });
+</script>
+{% endblock %}

@@ -108,6 +108,7 @@ AXES_ENABLED = True
 AXES_FAILURE_LIMIT = 5
 AXES_COOLOFF_TIME = timedelta(minutes=5)
 AXES_RESET_ON_SUCCESS = True
+AXES_LOCKOUT_PARAMETERS = ["username"]
 
 AUTHENTICATION_BACKENDS = [
     'axes.backends.AxesStandaloneBackend',

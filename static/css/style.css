@@ -852,3 +852,360 @@ tr:last-child td {
     font-size: 0.75rem;
     padding: 0.4rem 0.75rem;
 }
+
+/* ========== RESPONSIVE ========== */
+
+/* Modal */
+.modal {
+    display: none;
+    position: fixed;
+    inset: 0;
+    z-index: 2000;
+    background: rgba(0, 0, 0, 0.6);
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
+    backdrop-filter: blur(3px);
+}
+.modal-content {
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    padding: 2rem;
+    width: 100%;
+    max-width: 520px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.4);
+}
+.modal-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+.modal-header h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+.modal-close {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    line-height: 1;
+    transition: color 0.2s;
+}
+.modal-close:hover {
+    color: var(--text-primary);
+}
+
+/* Fix undefined --accent-1 used in auth templates */
+:root {
+    --accent-1: var(--accent-blue);
+}
+
+/* Notifications */
+.notification {
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    margin-bottom: 0.5rem;
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.notification-success {
+    background: rgba(16, 185, 129, 0.1);
+    color: var(--accent-green);
+}
+.notification-error {
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--accent-red);
+}
+.notification.fade-out {
+    opacity: 0;
+    transform: translateY(-8px);
+}
+
+/* PWA Install Button */
+.pwa-install-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+    padding: 0.5rem 1rem;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 6px;
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+    width: auto;
+}
+.pwa-install-btn:hover {
+    color: var(--text-primary);
+    border-color: var(--accent-blue);
+    background: rgba(79, 70, 229, 0.06);
+}
+.pwa-install-btn i {
+    font-size: 0.85rem;
+    color: var(--accent-blue);
+}
+.pwa-hidden {
+    display: none !important;
+}
+
+@media (max-width: 480px) {
+    .pwa-install-btn {
+        width: 100%;
+        justify-content: center;
+        padding: 0.6rem 1rem;
+    }
+}
+
+/* Sidebar Toggle (mobile only) */
+.sidebar-toggle {
+    display: none;
+    position: fixed;
+    top: 0.75rem;
+    left: 0.75rem;
+    z-index: 1001;
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    color: var(--text-primary);
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 1.15rem;
+    transition: background 0.2s;
+}
+.sidebar-toggle:hover {
+    background: var(--border-color);
+}
+
+.sidebar-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 998;
+    backdrop-filter: blur(2px);
+}
+
+/* Tablet & below */
+@media (max-width: 768px) {
+    .sidebar-toggle {
+        display: flex;
+    }
+
+    .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        bottom: 0;
+        z-index: 1000;
+        transform: translateX(-100%);
+        transition: transform 0.3s ease;
+        width: 260px;
+    }
+    .sidebar.open {
+        transform: translateX(0);
+    }
+    .sidebar-overlay.active {
+        display: block;
+    }
+
+    .app-layout {
+        display: block;
+        min-height: 100vh;
+    }
+
+    .main-content {
+        padding: 1.25rem;
+        padding-top: 4rem;
+        overflow-y: visible;
+    }
+
+    /* Dashboard grids */
+    .grid-metrics {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 1rem;
+    }
+    .charts-grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* Filters stack vertically */
+    .filter-form {
+        flex-direction: column;
+        width: 100%;
+    }
+    .select-filter {
+        min-width: 100%;
+        max-width: 100%;
+    }
+    .btn-filter {
+        width: 100%;
+    }
+
+    /* Login/register */
+    .login-card {
+        padding: 1.5rem;
+        margin: 0 1rem;
+    }
+
+    /* Chat */
+    .chat-container {
+        height: 450px;
+    }
+
+    /* Topbar actions */
+    .topbar-actions {
+        width: 100%;
+    }
+    .topbar-actions .btn-primary,
+    .topbar-actions .btn-secondary {
+        flex: 1;
+        justify-content: center;
+    }
+
+    /* Table - reduce padding */
+    th, td {
+        padding: 0.75rem 0.5rem;
+    }
+
+    /* Bulk actions dropdown - prevent right overflow */
+    #bulk-actions-dropdown {
+        right: auto !important;
+        left: 0 !important;
+    }
+
+    /* Installment group card meta */
+    .installment-group-card > div:first-child {
+        flex-direction: column;
+    }
+}
+
+/* Mobile */
+@media (max-width: 480px) {
+    .sidebar-toggle {
+        top: 0.5rem;
+        left: 0.5rem;
+        width: 36px;
+        height: 36px;
+        font-size: 1rem;
+    }
+
+    .sidebar {
+        width: 100%;
+        max-width: 280px;
+    }
+
+    .main-content {
+        padding: 0.75rem;
+        padding-top: 3.5rem;
+    }
+
+    .page-title {
+        font-size: 1.35rem;
+    }
+
+    .grid-metrics {
+        grid-template-columns: 1fr;
+    }
+
+    .metric-value {
+        font-size: 1.35rem;
+    }
+
+    .login-card {
+        padding: 1rem;
+        margin: 0 0.5rem;
+    }
+    .login-card h1 {
+        font-size: 1.25rem;
+    }
+
+    .chat-container {
+        height: 300px;
+    }
+    .message {
+        max-width: 95%;
+    }
+    .chat-input-area {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .topbar {
+        flex-direction: column;
+        align-items: stretch;
+    }
+    .topbar-actions {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    .topbar-actions .btn-primary,
+    .topbar-actions .btn-secondary {
+        width: 100%;
+        justify-content: center;
+    }
+    .topbar-actions-divider {
+        display: none;
+    }
+
+    .section-header {
+        flex-direction: column;
+    }
+    .section-title {
+        margin-bottom: 0.5rem;
+    }
+
+    th, td {
+        padding: 0.5rem 0.3rem;
+        font-size: 0.8rem;
+    }
+
+    .card {
+        padding: 1rem;
+    }
+
+    .bulk-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .installment-group-card > div:first-child > div:last-child {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .nav-links a, .logout-btn {
+        padding: 0.6rem 0.75rem;
+    }
+
+    .modal-content {
+        padding: 1.25rem;
+        margin: 0.5rem;
+    }
+}
+
+/* Small desktop adjustments */
+@media (min-width: 769px) and (max-width: 1024px) {
+    .main-content {
+        padding: 1.5rem 1.75rem;
+    }
+    .grid-metrics {
+        gap: 1rem;
+    }
+    .select-filter {
+        min-width: 140px;
+    }
+}

@@ -5,6 +5,12 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}SmartFinance AI{% endblock %}</title>
     {% load static %}
+    <link rel="manifest" href="{% static 'manifest.json' %}">
+    <meta name="theme-color" content="#4f46e5">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <link rel="apple-touch-icon" href="{% static 'apple-touch-icon.png' %}">
+    <link rel="icon" type="image/png" href="{% static 'icon-192.png' %}">
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" integrity="sha512-iecdLmaskl7CVkqkXNQ/ZH/XLlvWZOJyj7Yy7tcenmpD1ypASozpmT/E0iPtmFIB46ZmdtAc9eNBvH0H/ZpiBw==" crossorigin="anonymous" referrerpolicy="no-referrer">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js" integrity="sha384-vsrfeLOOY6KuIYKDlmVH5UiBmgIdB1oEf7p01YgWHuqmOHfZr374+odEv96n9tNC" crossorigin="anonymous"></script>
@@ -12,7 +18,10 @@
 <body>
     {% if request.user.is_authenticated %}
     <div class="app-layout">
-        <aside class="sidebar">
+        <button class="sidebar-toggle" id="sidebar-toggle" aria-label="Abrir menu">
+            <i class="fa-solid fa-bars"></i>
+        </button>
+        <aside class="sidebar" id="sidebar">
             <div class="brand">
                 <i class="fa-solid fa-chart-pie"></i> SmartFinance AI
             </div>
@@ -39,13 +48,98 @@
                 </li>
             </ul>
         </aside>
+        <div class="sidebar-overlay" id="sidebar-overlay"></div>
 
         <main class="main-content">
             {% block content %}{% endblock %}
         </main>
     </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+        var toggle = document.getElementById('sidebar-toggle');
+        var sidebar = document.getElementById('sidebar');
+        var overlay = document.getElementById('sidebar-overlay');
+        if (toggle && sidebar && overlay) {
+            function closeSidebar() {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('active');
+                toggle.innerHTML = '<i class="fa-solid fa-bars"></i>';
+            }
+            function openSidebar() {
+                sidebar.classList.add('open');
+                overlay.classList.add('active');
+                toggle.innerHTML = '<i class="fa-solid fa-xmark"></i>';
+            }
+            toggle.addEventListener('click', function() {
+                if (sidebar.classList.contains('open')) {
+                    closeSidebar();
+                } else {
+                    openSidebar();
+                }
+            });
+            overlay.addEventListener('click', closeSidebar);
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && sidebar.classList.contains('open')) {
+                    closeSidebar();
+                }
+            });
+        }
+    });
+    </script>
     {% else %}
         {% block login_content %}{% endblock %}
     {% endif %}
+
+<script>
+(function() {
+    var deferredPrompt = null;
+    var installBtn = document.getElementById('pwa-install-btn');
+
+    window.addEventListener('beforeinstallprompt', function(e) {
+        e.preventDefault();
+        deferredPrompt = e;
+        if (installBtn) installBtn.classList.remove('pwa-hidden');
+    });
+
+    window.addEventListener('appinstalled', function() {
+        deferredPrompt = null;
+        if (installBtn) installBtn.classList.add('pwa-hidden');
+    });
+
+    if (installBtn) {
+        installBtn.addEventListener('click', function() {
+            if (!deferredPrompt) return;
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then(function(choiceResult) {
+                if (choiceResult.outcome === 'accepted') {
+                    installBtn.classList.add('pwa-hidden');
+                }
+                deferredPrompt = null;
+            });
+        });
+    }
+
+    // Auto-dismiss notifications after 4 seconds
+    var notifications = document.querySelectorAll('.notification');
+    notifications.forEach(function(el) {
+        setTimeout(function() {
+            el.classList.add('fade-out');
+            setTimeout(function() {
+                el.style.display = 'none';
+            }, 500);
+        }, 4000);
+    });
+
+    if ('serviceWorker' in navigator) {
+        var isStandalone = window.matchMedia('(display-mode: standalone)').matches
+                        || window.matchMedia('(display-mode: fullscreen)').matches
+                        || window.navigator.standalone;
+        if (!isStandalone) {
+            navigator.serviceWorker.register('/sw.js', { scope: '/' }).catch(function() {});
+        }
+    }
+})();
+</script>
 </body>
 </html>

@@ -644,3 +644,274 @@ Sem configuração de SMTP, usa `console.EmailBackend` (imprime no log do contai
 - View usa `@require_POST` + `@login_required` + filtro `user=request.user`
 - CSRF token no formulário
 - Confirmação JS: `confirm('Excluir TODAS as N parcelas de "Descrição"? Esta ação não pode ser desfeita.')`
+
+---
+
+### 29. Correção: NoReverseMatch no Grupo de Parcelas (installment_group=None)
+
+**Data:** Junho 2026
+
+**Problema:** Ao acessar o filtro "Despesa Parcelada", ocorria `NoReverseMatch` com `group_id=None`. Transações importadas por CSV tinham `is_installment=True` mas `installment_group=NULL`. A URL `<uuid:group_id>` exigia UUID válido, e o template `{% url 'finance:delete_installment_group' group.group_id %}` falhava com `None`.
+
+**Solução:**
+- Removido `installment_group__isnull=False` do filtro (que ocultava as transações órfãs)
+- Adicionado **backfill automático** na view `finance_list`: ao detectar transações com `installment_group=None`, agrupa por (descrição, installment_total), gera UUID e salva no banco
+- Template defensivo: `{% if group.group_id %}` envolve o botão "Excluir todas"
+
+**Arquivos alterados:**
+
+| Arquivo | Mudança |
+|---|---|
+| `finance/views.py` | Removido `installment_group__isnull=False` do filtro; adicionado backfill de UUID antes do agrupamento |
+| `templates/finance_list.html` | `{% if group.group_id %}` envolvendo botão "Excluir todas" (defensivo) |
+
+**Detalhes técnicos:**
+- Backfill roda apenas na primeira requisição com `despesa_parcelada` após a correção
+- Usa `(description, installment_total)` como chave de grupo — se duas compras diferentes tiverem mesma descrição e total, serão agrupadas juntas (edge case aceitável)
+- Transações são atualizadas em lote com `Transaction.objects.filter(pk=tx.pk).update(installment_group=...)`
+- QuerySet `qs` é reavaliado após o backfill (lazy evaluation do Django), então o agrupamento seguinte enxerga os UUIDs
+
+---
+
+### 30. Correção: Axes Bloqueava Todos os Usuários no Docker
+
+**Data:** Junho 2026
+
+**Problema:** `AXES_LOCKOUT_PARAMETERS = ["ip_address"]` combinado com ambiente Docker fazia com que tentativas falhas de UM usuário bloqueassem TODOS. Todos os containers acessam via o mesmo IP do gateway Docker (ex: `172.18.0.1`), então 5 falhas de `vani` impediam `admin` de logar.
+
+**Solução:**
+- Alterado `AXES_LOCKOUT_PARAMETERS` de `["ip_address"]` para `["username"]`
+- Bloqueio passa a ser **por usuário**, não por IP
+
+**Arquivos alterados:**
+
+| Arquivo | Mudança |
+|---|---|
+| `core/settings.py` | Adicionado `AXES_LOCKOUT_PARAMETERS = ["username"]` |
+
+**Detalhes técnicos:**
+- Antes: vani erra 5x → IP 172.18.0.1 bloqueado → admin também não loga (mesmo IP)
+- Depois: vani erra 5x → apenas vani bloqueado → admin loga normalmente
+- Admin pode desbloquear usuários via `/admin/axes/`
+- Cooldown de 5 minutos (`AXES_COOLOFF_TIME`) continua funcionando por usuário
+- `AXES_RESET_ON_SUCCESS = True` continua resetando a contagem ao logar corretamente
+- Bloqueios anteriores no banco foram limpos (`TRUNCATE axes_accessattempt`)
+
+---
+
+### 31. Correção: Erro 500 no Registro (ValueError - multiple backends)
+
+**Data:** Junho 2026
+
+**Problema:** Ao cadastrar novo usuário, o registro retornava HTTP 500 com `ValueError: You have multiple authentication backends configured and therefore must provide the backend argument`. O `auth_login(request, user)` era chamado sem especificar qual backend usar, e com dois backends configurados (AxesStandaloneBackend e ModelBackend), o Django exigia que `user.backend` fosse definido explicitamente.
+
+**Solução:** Adicionado `user.backend = "django.contrib.auth.backends.ModelBackend"` antes de `auth_login()`.
+
+**Arquivos alterados:**
+
+| Arquivo | Mudança |
+|---|---|
+| `users/views.py:16` | `user.backend = "django.contrib.auth.backends.ModelBackend"` antes de `auth_login(request, user)` |
+
+**Detalhes técnicos:**
+- `UserCreationForm.save()` cria o usuário mas não define `backend` — diferente de `authenticate()` que já retorna com `backend` preenchido
+- Com `AUTHENTICATION_BACKENDS = ['axes.backends.AxesStandaloneBackend', 'django.contrib.auth.backends.ModelBackend']`, o login precisa saber qual backend usou
+- AxesStandaloneBackend é usado para consultar o rate limit, ModelBackend para autenticar — definimos explícito para evitar ambiguidade
+
+---
+
+### 32. Correção: Import CSV Ignorava Arquivo (name do campo errado)
+
+**Data:** Junho 2026
+
+**Problema:** O modal de importar CSV enviava o arquivo com `name="csv_file"`, mas o formulário Django (`CSVImportForm`) espera `name="file"`. O arquivo era ignorado silenciosamente — `form.is_valid()` retornava falso porque o campo `file` estava vazio, nenhuma transação era criada e nenhum erro era exibido ao usuário.
+
+**Solução:** Alterado `name="csv_file"` para `name="file"` no input do template.
+
+**Arquivos alterados:**
+
+| Arquivo | Mudança |
+|---|---|
+| `templates/finance_list.html:254` | `<input type="file" name="csv_file">` → `<input type="file" name="file">` |
+
+**Detalhes técnicos:**
+- `CSVImportForm` (finance/forms.py:72) define `file = forms.FileField(...)`
+- Django forms usam o `name` do campo como chave no `request.FILES`
+- O template foi escrito durante a reconstrução completa do `finance_list.html` (melhoria #28) e o nome do campo foi copiado errado
+- Help text do modal também foi corrigido: antes mostrava cabeçalhos em inglês (`date,description,type...`), agora mostra o formato real esperado: `Data;Descrição;Categoria;Tipo;Valor;Parcela;Paga`
+
+---
+
+### 33. Correção: Migração Pendente no Model Finance
+
+**Data:** Junho 2026
+
+**Problema:** Ao iniciar o container, o migrate exibia: `Your models in app(s): 'finance' have changes that are not yet reflected in a migration`. As `Meta options` de `Category` e `Transaction` (verbose_name, ordering) foram alteradas nas melhorias #21 (localização pt-BR) mas a migração correspondente nunca foi gerada.
+
+**Solução:** Gerada e aplicada a migração `0005_alter_category_options_alter_transaction_options.py`.
+
+**Arquivos alterados:**
+
+| Arquivo | Mudança |
+|---|---|
+| `finance/migrations/0005_alter_category_options_alter_transaction_options.py` | Nova migração com `AlterModelOptions` para Category e Transaction |
+
+**Detalhes técnicos:**
+- `python manage.py makemigrations` detectou as diferenças entre o model atual e a última migração
+- Migration contém apenas `AlterModelOptions` — zero alterações de schema (colunas)
+- `python manage.py migrate` aplicou a migração ao banco PostgreSQL
+- O arquivo foi copiado do container para o host para persistir no build
+
+---
+
+### 34. Melhoria: CSV Import com Suporte a installment_group
+
+**Data:** Junho 2026
+
+**Problema:** Ao importar despesas parceladas via CSV, as transações eram criadas com `is_installment=True` e `installment_number`/`installment_total` preenchidos, mas **sem `installment_group`** (UUID). Isso impedia o agrupamento correto no filtro "Despesa Parcelada" e impedia a exclusão em grupo.
+
+**Solução:** Gerado UUID de grupo automaticamente durante o import CSV, agrupando parcelas por (descrição, total de parcelas).
+
+**Arquivos alterados:**
+
+| Arquivo | Mudança |
+|---|---|
+| `finance/views.py` | Adicionado dict `import_group_map` para rastrear grupos por chave `(descrição, installment_total)`; gerado `uuid.uuid4()` na primeira parcela de cada grupo; incluído `installment_group=installment_group` no `Transaction.objects.create()` |
+| `templates/finance_list.html` | Help text do modal corrigido para mostrar o formato real do CSV |
+
+**Detalhes técnicos:**
+- `import_group_map` é um dict persistido durante o loop de importação
+- Chave: `(raw_description, installment_total)` — mesma descrição + mesmo total = mesmo grupo
+- UUID gerado na primeira ocorrência, reutilizado nas parcelas seguintes
+- Transações não-parceladas continuam com `installment_group=None` (comportamento inalterado)
+
+---
+
+### 35. Aplicação Responsiva (Mobile First)
+
+**Data:** Junho 2026
+
+**Problema:** A aplicação não possuía nenhuma media query. Sidebar fixa de 250px, grids do dashboard sem wrap, padding excessivo no main-content, filtros com `min-width` fixo, tabelas sem adaptação mobile, chat com altura fixa de 600px, e variável CSS `--accent-1` inexistente quebrando links em páginas de autenticação.
+
+**Solução:** Implementados 3 breakpoints com redesign completo para mobile:
+
+**Arquivos alterados:**
+
+| Arquivo | Mudança |
+|---|---|
+| `static/css/style.css` | +300 linhas com regras responsivas, modal styles, sidebar toggle/overlay |
+| `templates/base.html` | Botão hamburger, overlay, JS de toggle sidebar (fecha com overlay ou Escape) |
+| `templates/dashboard.html` | Classe `.charts-grid` para empilhamento dos gráficos em mobile |
+| `templates/login.html` | `--accent-1` → `--accent-blue` (2 ocorrências) |
+| `templates/register.html` | `--accent-1` → `--accent-blue` (2 ocorrências: link + focus) |
+| `templates/registration/password_reset_form.html` | `--accent-1` → `--accent-blue` |
+| `templates/registration/password_reset_confirm.html` | `--accent-1` → `--accent-blue` |
+
+**Breakpoints e comportamentos:**
+
+**Tablet (≤768px):** Sidebar vira off-canvas (fixa, `transform: translateX(-100%)`, 260px), botão hamburger fixo no topo esquerdo, overlay com `backdrop-filter: blur`. Dashboard metrics: 2 colunas. Charts empilham (`grid-template-columns: 1fr`). Filtros empilham verticalmente com width 100%. Login card padding reduzido para 1.5rem. Chat container: 450px.
+
+**Mobile (≤480px):** Sidebar max 280px. Metrics 1 coluna. Padding mínimo (0.75rem). Topbar empilha verticalmente, botões full-width. Divisor de ações some. Tabelas com padding reduzido (0.5rem). Card padding 1rem. Modal padding reduzido. Chat container 300px, input em coluna.
+
+**Desktop pequeno (769-1024px):** Padding intermediário, filtros com `min-width: 140px`.
+
+**Modal:** Adicionado CSS completo para `.modal` (overlay fixo, centralizado, backdrop-filter, max-height com scroll, sombra) — antes não existia, o modal aparecia sem posicionamento.
+
+---
+
+### 36. Progressive Web App (PWA)
+
+**Data:** Junho 2026
+
+**Descrição:** Implementado suporte a PWA para instalação como aplicativo nativo no celular/desktop, com cache offline de assets estáticos e botão de instalação discreto na tela de login.
+
+**Arquivos criados:**
+
+| Arquivo | Descrição |
+|---|---|
+| `static/manifest.json` | Web manifest: name, short_name, display standalone, theme/background color, ícones 192/512 |
+| `static/icon-192.png` | Ícone PWA 192×192 (gradiente azul→roxo + gráfico de pizza, gerado com Pillow) |
+| `static/icon-512.png` | Ícone PWA 512×512 (mesmo design) |
+| `static/apple-touch-icon.png` | Ícone iOS 180×180 |
+| `templates/sw.js` | Service Worker com network-first para HTML, cache-first para assets estáticos |
+
+**Arquivos alterados:**
+
+| Arquivo | Mudança |
+|---|---|
+| `templates/base.html` | `<link rel="manifest">`, `<meta theme-color>`, meta tags iOS, `apple-touch-icon`, favicon; script PWA (beforeinstallprompt, appinstalled, registro SW) |
+| `templates/login.html` | Botão `#pwa-install-btn` (oculto por padrão, aparece via beforeinstallprompt) |
+| `static/css/style.css` | Classes `.pwa-install-btn` e `.pwa-hidden` |
+| `core/urls.py` | Rota `/sw.js` servindo o service worker com `TemplateView` + `content_type="application/javascript"` |
+
+**Detalhes técnicos:**
+
+**1. Manifest:**
+- `start_url: "/"`, `display: standalone`, `background_color: #141419` (fundo do app), `theme_color: #4f46e5` (accent-blue)
+- Ícones com `purpose: "any maskable"` para adaptação automática a máscaras do SO
+
+**2. Service Worker (sw.js):**
+- **Network-first para HTML** (`event.request.mode === "navigate"`): sempre busca do servidor para garantir sessão atualizada. Se a rede falhar, fallback para cache. Isso resolve o problema de páginas autenticadas ficarem cached (usuário via PWA via diretamente para dashboard mesmo sem login).
+- **Cache-first para assets estáticos** (CSS, imagens, manifest): serve instantaneamente do cache, atualiza em segundo plano.
+- **Network-only** para API calls e outros: nunca cacheia respostas dinâmicas.
+- Cache versionado (`smartfinance-v2`) para controle de atualizações.
+- `skipWaiting()` + `clients.claim()` para ativar o novo SW imediatamente.
+- Filtro por `/admin/` — admin nunca é cacheado.
+
+**3. Botão de Instalação:**
+- Posicionado na tela de login, abaixo do link "Cadastre-se"
+- Estilo discreto: borda sutil (`1px solid var(--border-color)`), cor secundária, hover com borda azul
+- Oculta automaticamente quando o app já está instalado (`appinstalled` event)
+- Não aparece em navegadores que não suportam PWA (`beforeinstallprompt` nunca dispara)
+- Mobile: botão full-width com padding maior
+
+**4. Ícones:**
+- Gerados com Python/Pillow via script descartável (`static/gen_icons.py`)
+- Design: gradiente vertical azul (#4f46e5) → roxo (#9333ea) com gráfico de pizza em branco
+- 3 tamanhos: 192px (PWA), 512px (PWA/splash), 180px (iOS)
+
+---
+
+### 37. Notificações com Auto-Fade
+
+**Data:** Junho 2026
+
+**Problema:** Mensagens de sucesso/erro (Django messages framework) ficavam fixas no topo do dashboard/settings sem nunca desaparecer, obrigando o usuário a recarregar a página para sumirem.
+
+**Solução:** Adicionadas classes CSS de notificação com transição de fade-out + JavaScript que auto-dispensa após 4 segundos.
+
+**Arquivos alterados:**
+
+| Arquivo | Mudança |
+|---|---|
+| `static/css/style.css` | Classes `.notification`, `.notification-success`, `.notification-error`, `.notification.fade-out` (opacity 0 + translateY -8px em 500ms) |
+| `templates/base.html` | JS: `querySelectorAll('.notification')` → setTimeout 4s → add `fade-out` → 500ms → `display: none` |
+| `templates/dashboard.html` | Mensagens migradas de inline styles para `.notification notification-success/error` |
+| `templates/settings.html` | Mensagens migradas de inline styles para `.notification notification-success/error` |
+
+**Detalhes técnicos:**
+- Transição CSS: `opacity 0.5s ease, transform 0.5s ease`
+- Timer: 4 segundos visível → 500ms fade → oculto (total 4.5s)
+- Login.html mantém mensagens sem auto-fade (erros de autenticação não usam `.notification`)
+- Mensagens de erro (tag `error`) também sofrem fade — diferenciadas por cor vermelha (`.notification-error`)
+
+---
+
+### 38. Correção: SW Cacheava Página Autenticada (PWA)
+
+**Data:** Junho 2026
+
+**Problema:** O Service Worker original usava estratégia **cache-first** para todas as requisições GET, incluindo páginas HTML. Quando o usuário logava e depois fechava o app, o SW servia a página do dashboard do cache — pulando a tela de login e mostrando conteúdo autenticado sem sessão válida.
+
+**Solução:** Estratégia diferenciada por tipo de requisição:
+
+**Arquivos alterados:**
+
+| Arquivo | Mudança |
+|---|---|
+| `templates/sw.js` | Cache version bump v1→v2; implementa network-first para HTML, cache-first para assets, network-only para APIs |
+
+**Detalhes técnicos:**
+- `event.request.mode === "navigate"` → **network-first**: busca do servidor → cacheia resposta → retorna. Se rede falha → fallback para cache (offline mode)
+- `isStatic(url)` → **cache-first**: serve do cache instantaneamente, sem fetch
+- Demais requisições → **network-only**: nunca cacheia (APIs, admin, etc.)

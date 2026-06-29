@@ -6,7 +6,7 @@
 {% if messages %}
 <div style="margin-bottom: 1rem;">
     {% for message in messages %}
-    <div style="padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 0.5rem; {% if message.tags == 'success' %}background: rgba(16,185,129,0.1); color: var(--accent-green);{% else %}background: rgba(239,68,68,0.1); color: var(--accent-red);{% endif %}">
+    <div class="notification {% if message.tags == 'success' %}notification-success{% else %}notification-error{% endif %}">
         {{ message }}
     </div>
     {% endfor %}
@@ -46,7 +46,7 @@
     </div>
 </div>
 
-<div style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+<div class="charts-grid" style="display: grid; grid-template-columns: 2fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
     <div class="card">
         <h3 class="metric-title" style="margin-bottom: 1rem;">Fluxo de Caixa</h3>
         <canvas id="cashflowChart" height="100"></canvas>

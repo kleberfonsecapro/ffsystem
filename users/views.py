@@ -13,6 +13,7 @@ def register_view(request):
         form = CadastroForm(request.POST)
         if form.is_valid():
             user = form.save()
+            user.backend = "django.contrib.auth.backends.ModelBackend"
             auth_login(request, user)
             messages.success(request, "Conta criada com sucesso! Bem-vindo.")
             return redirect("dashboard:home")

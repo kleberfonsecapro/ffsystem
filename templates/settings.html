@@ -10,7 +10,7 @@
 {% if messages %}
 <div style="margin-bottom: 1rem;">
     {% for message in messages %}
-    <div style="padding: 0.75rem 1rem; border-radius: 6px; margin-bottom: 0.5rem; {% if message.tags == 'success' %}background: rgba(16,185,129,0.1); color: var(--accent-green);{% else %}background: rgba(239,68,68,0.1); color: var(--accent-red);{% endif %}">
+    <div class="notification {% if message.tags == 'success' %}notification-success{% else %}notification-error{% endif %}">
         {{ message }}
     </div>
     {% endfor %}

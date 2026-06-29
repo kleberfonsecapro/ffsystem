@@ -65,6 +65,18 @@ def finance_list(request):
 
     # Special handling for "despesa_parcelada" filter - group by installment_group
     if selected_type == "despesa_parcelada":
+        # Backfill installment_group for orphaned installment transactions
+        orphans = qs.filter(installment_group__isnull=True)
+        if orphans.exists():
+            group_map = {}
+            for tx in orphans:
+                key = (tx.description, tx.installment_total)
+                if key not in group_map:
+                    group_map[key] = uuid.uuid4()
+            for tx in orphans:
+                key = (tx.description, tx.installment_total)
+                Transaction.objects.filter(pk=tx.pk).update(installment_group=group_map[key])
+
         # Group by installment_group
         installment_groups = {}
         for tx in qs:
@@ -178,6 +190,7 @@ def import_csv(request):
     success_count = 0
     error_count = 0
     line_number = 2
+    import_group_map = {}
 
     for row in reader:
         errors = []
@@ -232,6 +245,7 @@ def import_csv(request):
         is_installment = False
         installment_number = None
         installment_total = None
+        installment_group = None
         if raw_parcela:
             parts = [p.strip() for p in raw_parcela.split("/") if p.strip()]
             if len(parts) != 2 or not parts[0].isdigit() or not parts[1].isdigit():
@@ -243,6 +257,10 @@ def import_csv(request):
                     errors.append("Parcela inválida. O número da parcela deve ser entre 1 e total.")
                 else:
                     is_installment = True
+                    group_key = (raw_description, installment_total)
+                    if group_key not in import_group_map:
+                        import_group_map[group_key] = uuid.uuid4()
+                    installment_group = import_group_map[group_key]
 
         if errors:
             for error in errors:
@@ -264,6 +282,7 @@ def import_csv(request):
             is_installment=is_installment,
             installment_number=installment_number,
             installment_total=installment_total,
+            installment_group=installment_group,
         )
         success_count += 1
         line_number += 1
