@@ -67,14 +67,14 @@ body {
 
 .nav-links a, .logout-btn {
     text-decoration: none;
-    color: var(--text-secondary);
+color: var(--text-secondary);
     font-weight: 500;
     display: flex;
     align-items: center;
     gap: 0.75rem;
     padding: 0.75rem 1rem;
     border-radius: 8px;
-    transition: all 0.2s;
+    transition: background-color 0.2s, color 0.2s;
 }
 
 .logout-btn {
@@ -211,7 +211,7 @@ body {
     font-weight: 500;
     font-size: inherit;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: background-color 0.2s, border-color 0.2s;
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
@@ -278,7 +278,7 @@ body {
     font-weight: 500;
     font-size: 0.85rem;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s;
     display: inline-flex;
     align-items: center;
     gap: 0.45rem;
@@ -286,7 +286,7 @@ body {
 }
 
 .btn-danger-outline:hover {
-    background: rgba(239, 68, 68, 0.12);
+    background-color: rgba(239, 68, 68, 0.12);
     border-color: var(--accent-red);
 }
 
@@ -473,12 +473,12 @@ tr:last-child td {
     cursor: pointer;
     padding: 0.4rem 0.6rem;
     border-radius: 6px;
-    transition: all 0.2s;
+    transition: background-color 0.2s, color 0.2s;
     font-size: 1rem;
 }
 
 .btn-delete:hover {
-    background: rgba(239, 68, 68, 0.15);
+    background-color: rgba(239, 68, 68, 0.15);
 }
 
 .btn-edit {
@@ -488,14 +488,14 @@ tr:last-child td {
     cursor: pointer;
     padding: 0.4rem 0.6rem;
     border-radius: 6px;
-    transition: all 0.2s;
+    transition: background-color 0.2s, color 0.2s;
     font-size: 1rem;
     text-decoration: none;
     display: inline-flex;
 }
 
 .btn-edit:hover {
-    background: rgba(79, 70, 229, 0.15);
+    background-color: rgba(79, 70, 229, 0.15);
 }
 
 .btn-paid {
@@ -505,12 +505,12 @@ tr:last-child td {
     cursor: pointer;
     padding: 0.4rem 0.6rem;
     border-radius: 6px;
-    transition: all 0.2s;
+    transition: background-color 0.2s, color 0.2s;
     font-size: 1rem;
 }
 
 .btn-paid:hover {
-    background: rgba(16, 185, 129, 0.15);
+    background-color: rgba(16, 185, 129, 0.15);
 }
 
 .paid-row {
@@ -691,7 +691,7 @@ tr:last-child td {
     height: 24px;
     background: var(--border-color);
     border-radius: 12px;
-    transition: all 0.3s;
+    transition: background-color 0.3s;
     position: relative;
     cursor: pointer;
 }
@@ -705,7 +705,7 @@ tr:last-child td {
     background: var(--text-secondary);
     top: 3px;
     left: 3px;
-    transition: all 0.3s;
+    transition: left 0.3s, background-color 0.3s;
 }
 
 .toggle-switch .form-check-input:checked + .toggle-slider {
@@ -813,7 +813,7 @@ tr:last-child td {
     cursor: pointer;
     padding: 0.3rem 0.5rem;
     border-radius: 6px;
-    transition: all 0.2s;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s;
     font-size: 0.9rem;
     display: inline-flex;
     align-items: center;
@@ -829,7 +829,7 @@ tr:last-child td {
     text-decoration: none;
     padding: 0.3rem 0.4rem;
     border-radius: 4px;
-    transition: all 0.2s;
+    transition: background-color 0.2s, color 0.2s;
     font-size: 1rem;
     display: inline-flex;
     align-items: center;
@@ -846,7 +846,7 @@ tr:last-child td {
     cursor: pointer;
     padding: 0.3rem 0.4rem;
     border-radius: 4px;
-    transition: all 0.2s;
+    transition: opacity 0.2s, background-color 0.2s;
     font-size: 0.8rem;
     display: inline-flex;
     align-items: center;
@@ -866,7 +866,7 @@ tr:last-child td {
     font-size: 0.7rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: background-color 0.2s, border-color 0.2s;
     display: inline-flex;
     align-items: center;
     gap: 0.3rem;
@@ -967,7 +967,7 @@ tr:last-child td {
     font-size: 0.75rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s;
     display: inline-flex;
     align-items: center;
     gap: 0.35rem;
@@ -997,7 +997,7 @@ tr:last-child td {
     border: 1px solid var(--border-color);
     border-radius: 10px;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: border-color 0.2s ease, background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
     min-width: 68px;
     user-select: none;
     position: relative;
@@ -1306,7 +1306,7 @@ select[multiple] option:checked {
     background: transparent;
     color: var(--text-secondary);
     cursor: pointer;
-    transition: all 0.15s;
+    transition: border-color 0.15s, color 0.15s, background-color 0.15s;
     font-family: inherit;
 }
 .analysis-month-btn:hover {
@@ -1608,7 +1608,7 @@ select[multiple] option:checked {
     font-size: 0.8rem;
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: background-color 0.2s, border-color 0.2s, color 0.2s;
     font-family: inherit;
     width: auto;
 }
