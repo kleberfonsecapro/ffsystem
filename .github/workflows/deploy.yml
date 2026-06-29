@@ -89,32 +89,22 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT || '22' }}
           envs: TAG,REGISTRY,IMAGE_NAME,GITHUB_ACTOR,GITHUB_TOKEN
+          script: |
+            set -e
+            echo "$GITHUB_TOKEN" | docker login $REGISTRY -u "$GITHUB_ACTOR" --password-stdin
+            cd /home/${{ secrets.SSH_USER }}/ffsystem
+            docker compose \
+              -f docker-compose.yml \
+              -f deploy/docker-compose.prod.yml \
+              pull web
+            TAG="$TAG" docker compose \
+              -f docker-compose.yml \
+              -f deploy/docker-compose.prod.yml \
+              up -d --no-deps web --no-build
+            docker image prune -f
         env:
           TAG: ${{ env.TAG }}
           REGISTRY: ${{ env.REGISTRY }}
           IMAGE_NAME: ${{ github.repository }}
           GITHUB_ACTOR: ${{ github.actor }}
           GITHUB_TOKEN: ${{ secrets.GHCR_TOKEN }}
-        script: |
-          set -e
-
-          echo "=== Login GHCR ==="
-          echo "$GITHUB_TOKEN" | docker login $REGISTRY -u "$GITHUB_ACTOR" --password-stdin
-
-          echo "=== Pull image ==="
-          cd /home/${{ secrets.SSH_USER }}/ffsystem
-          docker compose \
-            -f docker-compose.yml \
-            -f deploy/docker-compose.prod.yml \
-            pull web
-
-          echo "=== Restart web ==="
-          TAG="$TAG" docker compose \
-            -f docker-compose.yml \
-            -f deploy/docker-compose.prod.yml \
-            up -d --no-deps web --no-build
-
-          echo "=== Cleanup ==="
-          docker image prune -f
-
-          echo "=== Done ==="
