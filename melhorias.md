@@ -472,11 +472,25 @@ Sem configuração de SMTP, usa `console.EmailBackend` (imprime no log do contai
 **Observação:** README já lista como pendência.
 
 ### 14. Migrar psycopg2-binary para psycopg2
-**Descrição:** Substituir `psycopg2-binary` por `psycopg2` em produção (boas práticas).
-**Arquivos envolvidos:** `requirements.txt`, `Dockerfile`
-**Observação:** README já lista como pendência.
 
-### 18. Botão IA Flutuante na Gestão Financeira
+**Data:** Junho 2026
+
+**Descrição:** Substituir `psycopg2-binary` por `psycopg2` em produção (boas práticas). O `psycopg2` compila a extensão C localmente, o que garante melhor performance e compatibilidade com o ambiente de produção.
+
+**Arquivos alterados:**
+
+| Arquivo | Mudança |
+|---|---|
+| `requirements.txt` | `psycopg2-binary==2.9.12` → `psycopg2==2.9.12` |
+| `Dockerfile` | Adicionado `python3-dev` no `apt-get install` para compilação do psycopg2 |
+
+**Detalhes técnicos:**
+- `psycopg2-binary` é um wheel pré-compilado conveniente para desenvolvimento, mas não recomendado para produção
+- `psycopg2` compila a extensão C nativa no build, otimizando para o sistema alvo
+- Dockerfile atualizado com `python3-dev` para headers necessários à compilação
+- Build testado com sucesso no container
+
+---
 **Descrição:** Adicionar um botão "IA" ao lado de "Nova Transação" na página de gestão financeira. Ao clicar, abre um chat flutuante (modal/overlay) para conversar com o assistente IA, sem ocupar espaço fixo na tela.
 **Arquivos envolvidos:** `templates/finance_list.html`, `static/css/style.css`, `static/js/chat.js`
 **Observação:** O chat fixo foi removido na melhoria #17; esta é a substituição planejada.
