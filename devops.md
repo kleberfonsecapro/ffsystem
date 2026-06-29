@@ -408,12 +408,198 @@ cat backup.sql | docker compose exec -T db psql -U ffsystem ffsystem
 | `.dockerignore` | Exclusões para o build Docker |
 | `.gitignore` | Exclusões para versionamento |
 | `requirements.txt` | Dependências Python com versões fixadas |
+| `.github/workflows/deploy.yml` | Pipeline CI/CD (GitHub Actions) |
+| `deploy/docker-compose.prod.yml` | Override de produção (imagem do GHCR) |
 | `devops.md` | Documentação de infraestrutura e deploy |
 
 ### Arquivos de Configuração Externa
 
 | Arquivo | Localização | Propósito |
-|---|---|---|
+|---|---|---|---|
 | `dynamic.yml` | `/home/kleber/traefik/dynamic.yml` | Rotas do Traefik para ffsystem.giize.com |
 | `docker-compose.yml` | `/home/kleber/traefik/docker-compose.yml` | Orquestração do Traefik global |
 | `acme.json` | `/home/kleber/traefik/acme.json` | Certificados SSL Let's Encrypt |
+
+---
+
+## CI/CD — GitHub Actions + GHCR
+
+### Visão Geral
+
+```
+git push main
+  → GitHub Actions:
+      1. TEST: roda pytest com PostgreSQL (services)
+      2. BUILD & PUSH: constrói imagem Docker, publica no GHCR
+      3. DEPLOY: SSH no VPS, pull da imagem nova, restart web
+```
+
+A pipeline está em `.github/workflows/deploy.yml`.
+
+### Pré-requisitos — Secrets no GitHub
+
+Criar em **Settings → Secrets and variables → Actions**:
+
+| Secret | Valor | Como obter |
+|---|---|---|
+| `GHCR_TOKEN` | Personal Access Token (classic) com escopo `write:packages` | GitHub → Settings → Developer settings → Personal access tokens |
+| `SSH_HOST` | IP ou domínio do VPS | `ip route` ou DNS do servidor |
+| `SSH_USER` | `kleber` | Usuário SSH do VPS |
+| `SSH_PRIVATE_KEY` | Chave privada SSH (deploy key) | `ssh-keygen -t ed25519 -f deploy_key` + **não usar senha** |
+| `SSH_PORT` | `22` (opcional) | Porta SSH do servidor |
+
+**Setup da chave SSH no VPS:**
+```bash
+# No servidor (VPS)
+sudo -u kleber mkdir -p ~/.ssh && chmod 700 ~/.ssh
+echo "<conteúdo da chave pública .pub>" >> ~/.ssh/authorized_keys
+chmod 600 ~/.ssh/authorized_keys
+```
+
+Recomendado: **restringir** a chave de deploy no `authorized_keys` para só aceitar execução via pipe (não shell interativo):
+
+```
+command="/usr/local/bin/deploy-ffsystem",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ssh-ed25519 AAA... deploy-key
+```
+
+Mas o mínimo funcional é a chave sem command restriction.
+
+### Setup do GHCR Token
+
+1. GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)
+2. Criar token com escopo: `write:packages`, `read:packages`, `delete:packages`
+3. Copiar o token e salvar como `GHCR_TOKEN` nos Secrets do repositório
+
+**Autenticação na primeira vez no VPS:**
+```bash
+# Uma vez só — logar manualmente no VPS
+echo $GITHUB_TOKEN | docker login ghcr.io -u kleberfonsecapro --password-stdin
+```
+O CI/CD faz login automaticamente via `appleboy/ssh-action`.
+
+### Como funciona o GHCR
+
+GitHub Container Registry (`ghcr.io`) é um registro Docker gratuito integrado ao GitHub.
+
+**Publicação automática no CI:**
+- Cada push na `main` gera uma imagem com tags:
+  - `ghcr.io/kleberfonsecapro/ffsystem:latest`
+  - `ghcr.io/kleberfonsecapro/ffsystem:sha-<commit_hash>`
+
+**Pull manual para teste local:**
+```bash
+docker pull ghcr.io/kleberfonsecapro/ffsystem:latest
+```
+
+**Imagens públicas:** repositórios públicos têm imagens públicas. Repositórios privados precisam de autenticação.
+
+### Estrutura dos Arquivos
+
+```
+ffsystem/
+├── .github/
+│   └── workflows/
+│       └── deploy.yml          ← Pipeline CI/CD (GitHub Actions)
+├── deploy/
+│   └── docker-compose.prod.yml ← Override de produção (image do GHCR)
+├── docker-compose.yml          ← Base (build local)
+└── ...
+```
+
+### Workflow — passo a passo
+
+#### Job 1: `test`
+- Sobe PostgreSQL 16 como service container
+- Instala dependências Python com cache
+- Roda `python manage.py test --noinput`
+
+#### Job 2: `build-and-push` (só em push na main)
+- Login no GHCR com `GHCR_TOKEN`
+- Build da imagem Docker
+- Push com tags: `latest` + `sha-<commit>`
+
+#### Job 3: `deploy` (após build-and-push)
+- SSH no VPS via chave privada
+- Login no GHCR
+- `docker compose pull web` — baixa a imagem nova
+- `docker compose up -d --no-deps web --no-build` — restart sem build local
+- `docker image prune -f` — limpa imagens antigas
+
+### Fluxo de Desenvolvimento
+
+```bash
+# Desenvolvimento local — nada muda
+git checkout -b lab
+# ...codar...
+git push origin lab
+
+# CI roda apenas testes (sem build, sem deploy)
+
+# Merge para main
+git checkout main
+git merge lab
+git push origin main
+
+# CI dispara: test → build → deploy
+```
+
+**Push em branches que não sejam `main` não faz deploy.**
+
+### Rollback
+
+Se um deploy quebrar:
+
+```bash
+# Opção 1: reverter o commit
+git revert HEAD
+git push origin main
+# CI vai construir nova imagem e deploy automático
+
+# Opção 2: manual no VPS com tag anterior
+ssh kleber@vps
+cd /home/kleber/ffsystem
+TAG="sha-<commit-anterior>" docker compose \
+  -f docker-compose.yml \
+  -f deploy/docker-compose.prod.yml \
+  pull web
+docker compose \
+  -f docker-compose.yml \
+  -f deploy/docker-compose.prod.yml \
+  up -d --no-deps web --no-build
+```
+
+### Segurança
+
+| Medida | Detalhes |
+|---|---|
+| `.env` nunca sai do VPS | CI/CD usa `${{ secrets.* }}` para credenciais |
+| `GHCR_TOKEN` scoped a packages | Sem acesso a código, issues, etc. |
+| Imagens imutáveis | Cada build tem tag única (`sha-<commit>`) |
+| Build isolado da produção | CI constrói em ambiente efêmero |
+| `--no-build` no deploy | VPS nunca compila código |
+| `docker image prune -f` | Remove imagens antigas do disco |
+
+### Troubleshooting
+
+**Pipeline falhou no deploy:**
+```bash
+# Verificar logs da Action no GitHub → Actions → workflow run
+# Ou SSH manual e verificar:
+docker compose -f docker-compose.yml -f deploy/docker-compose.prod.yml ps
+docker compose -f docker-compose.yml -f deploy/docker-compose.prod.yml logs web
+```
+
+**GHCR token expirou:**
+```bash
+# Gerar novo token no GitHub e atualizar o secret
+# Para testar local:
+echo $NOVO_TOKEN | docker login ghcr.io -u kleberfonsecapro --password-stdin
+```
+
+**Chave SSH rejeitada:**
+```bash
+# Verificar permissões no VPS
+chmod 600 ~/.ssh/authorized_keys
+# Testar conexão manual:
+ssh -i deploy_key kleber@vps
+```

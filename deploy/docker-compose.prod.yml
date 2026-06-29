@@ -1,0 +1,4 @@
+services:
+  web:
+    image: ghcr.io/kleberfonsecapro/ffsystem:${TAG:-latest}
+    pull_policy: always
