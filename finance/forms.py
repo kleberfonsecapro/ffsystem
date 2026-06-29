@@ -47,10 +47,11 @@ class TransactionForm(forms.ModelForm):
         }
 
     def __init__(self, *args, **kwargs):
+        user = kwargs.pop("user", None)
         super().__init__(*args, **kwargs)
         self.fields["category_ref"].queryset = (
             Category.objects.filter(user__isnull=True)
-            | Category.objects.filter(user=self.instance.user if self.instance.pk else None)
+            | Category.objects.filter(user=user)
         )
         self.fields["category_ref"].empty_label = None
 

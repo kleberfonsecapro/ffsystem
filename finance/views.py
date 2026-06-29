@@ -304,7 +304,7 @@ def import_csv(request):
 @login_required(login_url="/users/login/")
 def finance_add(request):
     if request.method == "POST":
-        form = TransactionForm(request.POST)
+        form = TransactionForm(request.POST, user=request.user)
         if form.is_valid():
             is_installment = form.cleaned_data.get("is_installment")
             if is_installment:
@@ -343,7 +343,7 @@ def finance_add(request):
         else:
             messages.error(request, "Erro nos dados informados. Verifique e tente novamente.")
     else:
-        form = TransactionForm()
+        form = TransactionForm(user=request.user)
 
     return render(request, "finance_add.html", {"form": form})
 
@@ -439,13 +439,13 @@ def finance_edit(request, pk):
     transaction = get_object_or_404(Transaction, pk=pk, user=request.user)
 
     if request.method == "POST":
-        form = TransactionForm(request.POST, instance=transaction)
+        form = TransactionForm(request.POST, instance=transaction, user=request.user)
         if form.is_valid():
             form.save()
             messages.success(request, "Transação atualizada com sucesso!")
             return redirect("finance:list")
     else:
-        form = TransactionForm(instance=transaction)
+        form = TransactionForm(instance=transaction, user=request.user)
     return render(request, "finance_add.html", {"form": form, "editing": True})
 
 
