@@ -1082,3 +1082,32 @@ Sem configuração de SMTP, usa `console.EmailBackend` (imprime no log do contai
 
 **7. Segurança:**
 - `@login_required`, filtro `user=request.user`, `DecimalEncoder` para serialização segura
+
+---
+
+### 42. Correção botão PWA na tela de login
+
+**Data:** Junho 2026
+
+**Descrição:** O botão "Instalar App" na tela de login não aparecia no celular porque dependia do evento `beforeinstallprompt`, que só dispara após engajamento significativo no Chrome. Corrigido para sempre exibir o botão, com fallback explicativo caso o evento não tenha disparado.
+
+**Arquivos alterados:**
+
+| Arquivo | Mudança |
+|---|---|
+| `templates/login.html` | Botão sem classe `pwa-hidden` (sempre visível); adicionado `#pwa-fallback` com instrução de instalação manual |
+| `templates/base.html` | JS do PWA: se `deferredPrompt` existe → prompt nativo; senão → esconde botão e mostra fallback |
+| `static/css/style.css` | Classe `.pwa-hidden` removida; classe `.pwa-fallback` com estilo de card informativo |
+
+**Detalhes técnicos:**
+
+**Problema:**
+- `beforeinstallprompt` só dispara após múltiplas visitas e ~30s de engajamento
+- Na tela de login, se o usuário loga rápido, o evento nunca dispara → botão fica oculto pra sempre
+- Depois de logado, o botão não existe no layout autenticado
+
+**Solução:**
+- Botão começa visível (remove `pwa-hidden`)
+- Se `deferredPrompt` existe ao clicar → `prompt()` nativo (instalação padrão)
+- Se não existe → esconde botão e mostra fallback: *"Para instalar, use o menu do navegador: Compartilhar → Adicionar à Tela Inicial"*
+- Fallback também desaparece quando `appinstalled` dispara
