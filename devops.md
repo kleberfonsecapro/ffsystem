@@ -436,46 +436,81 @@ git push main
 
 A pipeline está em `.github/workflows/deploy.yml`.
 
-### Pré-requisitos — Secrets no GitHub
+### Setup Inicial (uma vez)
 
-Criar em **Settings → Secrets and variables → Actions**:
+#### 1. Gerar chave SSH de deploy (na sua máquina local)
 
-| Secret | Valor | Como obter |
-|---|---|---|
-| `GHCR_TOKEN` | Personal Access Token (classic) com escopo `write:packages` | GitHub → Settings → Developer settings → Personal access tokens |
-| `SSH_HOST` | IP ou domínio do VPS | `ip route` ou DNS do servidor |
-| `SSH_USER` | `kleber` | Usuário SSH do VPS |
-| `SSH_PRIVATE_KEY` | Chave privada SSH (deploy key) | `ssh-keygen -t ed25519 -f deploy_key` + **não usar senha** |
-| `SSH_PORT` | `22` (opcional) | Porta SSH do servidor |
-
-**Setup da chave SSH no VPS:**
 ```bash
-# No servidor (VPS)
-sudo -u kleber mkdir -p ~/.ssh && chmod 700 ~/.ssh
-echo "<conteúdo da chave pública .pub>" >> ~/.ssh/authorized_keys
+ssh-keygen -t ed25519 -f ffsystem-deploy-key -N "" -C "ffsystem-ci-cd"
+```
+
+Isso gera dois arquivos:
+- `ffsystem-deploy-key` — **chave privada** (vai para o GitHub Secrets)
+- `ffsystem-deploy-key.pub` — **chave pública** (vai para o VPS)
+
+#### 2. Adicionar chave pública no VPS
+
+```bash
+ssh kleber@<ip-do-vps>
+mkdir -p ~/.ssh && chmod 700 ~/.ssh
+echo "<cole aqui a chave pública .pub>" >> ~/.ssh/authorized_keys
 chmod 600 ~/.ssh/authorized_keys
 ```
 
-Recomendado: **restringir** a chave de deploy no `authorized_keys` para só aceitar execução via pipe (não shell interativo):
+(Opcional) Restringir a chave para aceitar apenas comandos do deploy:
 
-```
-command="/usr/local/bin/deploy-ffsystem",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty ssh-ed25519 AAA... deploy-key
-```
-
-Mas o mínimo funcional é a chave sem command restriction.
-
-### Setup do GHCR Token
-
-1. GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)
-2. Criar token com escopo: `write:packages`, `read:packages`, `delete:packages`
-3. Copiar o token e salvar como `GHCR_TOKEN` nos Secrets do repositório
-
-**Autenticação na primeira vez no VPS:**
 ```bash
-# Uma vez só — logar manualmente no VPS
-echo $GITHUB_TOKEN | docker login ghcr.io -u kleberfonsecapro --password-stdin
+# Editar ~/.ssh/authorized_keys e prefixar a linha com:
+command="/usr/local/bin/deploy-ffsystem",no-port-forwarding,no-X11-forwarding,no-agent-forwarding,no-pty
 ```
-O CI/CD faz login automaticamente via `appleboy/ssh-action`.
+
+Mas o mínimo funcional é a chave sem restrição.
+
+#### 3. Criar GHCR Token (GitHub Container Registry)
+
+Acessar no navegador:
+
+1. **Profile photo (canto superior direito)** → **Settings**
+2. **Developer settings** (fim da sidebar esquerda)
+3. **Personal access tokens** → **Tokens (classic)**
+4. **Generate new token** → **Generate new token (classic)**
+5. Preencher:
+   - **Note:** `ffsystem-ci-cd`
+   - **Expiration:** `90 days` (ou `No expiration` se preferir, mas menos seguro)
+   - **Scopes:** marcar apenas:
+     ```
+     ☑ write:packages
+     ☑ read:packages
+     ☑ delete:packages
+     ```
+6. **Generate token**
+7. **Copiar o token agora** — não sai da página sem copiar
+
+#### 4. Criar Secrets no GitHub
+
+No repositório do GitHub:
+
+**Settings** → **Secrets and variables** → **Actions** → **New repository secret**
+
+Criar cada um:
+
+| Secret | Valor |
+|---|---|
+| `GHCR_TOKEN` | O token que copiou no passo anterior |
+| `SSH_PRIVATE_KEY` | Conteúdo do arquivo `ffsystem-deploy-key` (a chave **privada**, começa com `-----BEGIN OPENSSH PRIVATE KEY-----`) |
+| `SSH_HOST` | IP ou domínio do VPS |
+| `SSH_USER` | `kleber` |
+| `SSH_PORT` | `22` (ou a porta SSH do servidor) |
+
+#### 5. Login manual no GHCR (uma vez no VPS)
+
+```bash
+# No VPS, logar manualmente para o Docker cachear as credenciais
+ssh kleber@<ip-do-vps>
+echo $GHCR_TOKEN | docker login ghcr.io -u kleberfonsecapro --password-stdin
+```
+
+O CI/CD faz login automaticamente via `appleboy/ssh-action`, mas esse passo inicial evita surpresas.
 
 ### Como funciona o GHCR
 
