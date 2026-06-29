@@ -14,8 +14,8 @@ from django.db.models.functions import TruncMonth
 from django.template.loader import render_to_string
 from weasyprint import HTML
 from dateutil.relativedelta import relativedelta
-from .models import Transaction, Category
-from .forms import TransactionForm, CSVImportForm
+from .models import Transaction, Category, TransactionDocument
+from .forms import TransactionForm, CSVImportForm, TransactionDocumentForm
 from .categories import resolve_category
 
 
@@ -45,7 +45,7 @@ def format_brazilian_currency(value):
 
 @login_required(login_url="/users/login/")
 def finance_list(request):
-    qs_base = Transaction.objects.filter(user=request.user).order_by("-date", "-created_at")
+    qs_base = Transaction.objects.filter(user=request.user).prefetch_related("documents").order_by("-date", "-created_at")
 
     months_available = (
         qs_base.annotate(month=TruncMonth("date"))
@@ -401,6 +401,36 @@ def finance_delete_installment_group(request, group_id):
         desc = first_tx.description
         transactions.delete()
         messages.success(request, f"Grupo de parcelas \"{desc}\" ({count} parcelas) excluído com sucesso!")
+    return redirect("finance:list")
+
+
+@login_required(login_url="/users/login/")
+@require_POST
+def finance_upload_document(request, pk):
+    transaction = get_object_or_404(Transaction, pk=pk, user=request.user)
+    form = TransactionDocumentForm(request.POST, request.FILES)
+    if form.is_valid():
+        doc = form.save(commit=False)
+        doc.transaction = transaction
+        doc.filename_original = form.cleaned_data["file"].name
+        doc.filesize = form.cleaned_data["file"].size
+        doc.save()
+        messages.success(request, f"Comprovante \"{doc.filename_original}\" anexado com sucesso!")
+    else:
+        for errors in form.errors.values():
+            for error in errors:
+                messages.error(request, error)
+    return redirect("finance:list")
+
+
+@login_required(login_url="/users/login/")
+@require_POST
+def finance_delete_document(request, pk, doc_id):
+    doc = get_object_or_404(TransactionDocument, pk=doc_id, transaction__pk=pk, transaction__user=request.user)
+    filename = doc.filename_original
+    doc.file.delete()
+    doc.delete()
+    messages.success(request, f"Comprovante \"{filename}\" removido com sucesso!")
     return redirect("finance:list")
 
 

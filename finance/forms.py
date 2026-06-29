@@ -1,5 +1,6 @@
+import os
 from django import forms
-from .models import Transaction, Category
+from .models import Transaction, Category, TransactionDocument
 
 
 class TransactionForm(forms.ModelForm):
@@ -98,3 +99,24 @@ class CSVImportForm(forms.Form):
             raise forms.ValidationError("Use ponto e vírgula (;) como delimitador no CSV.")
 
         return csv_file
+
+
+class TransactionDocumentForm(forms.ModelForm):
+    class Meta:
+        model = TransactionDocument
+        fields = ["file"]
+        labels = {"file": "Comprovante"}
+        help_texts = {"file": "PDF, JPEG ou PNG. Máximo 10 MB."}
+        widgets = {"file": forms.ClearableFileInput(attrs={"accept": ".pdf,.jpg,.jpeg,.png"})}
+
+    ALLOWED_EXTENSIONS = {".pdf", ".jpg", ".jpeg", ".png"}
+    MAX_SIZE = 10 * 1024 * 1024
+
+    def clean_file(self):
+        f = self.cleaned_data["file"]
+        ext = os.path.splitext(f.name)[1].lower()
+        if ext not in self.ALLOWED_EXTENSIONS:
+            raise forms.ValidationError("Formato não suportado. Use PDF, JPEG ou PNG.")
+        if f.size > self.MAX_SIZE:
+            raise forms.ValidationError("O arquivo deve ter no máximo 10 MB.")
+        return f

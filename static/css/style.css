@@ -805,6 +805,58 @@ tr:last-child td {
 }
 
 /* Installment Group Delete Button */
+/* Document / Comprovante */
+.btn-document {
+    background: none;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    cursor: pointer;
+    padding: 0.3rem 0.5rem;
+    border-radius: 6px;
+    transition: all 0.2s;
+    font-size: 0.9rem;
+    display: inline-flex;
+    align-items: center;
+}
+.btn-document:hover {
+    background: rgba(79, 70, 229, 0.1);
+    border-color: var(--accent-blue);
+    color: var(--accent-blue);
+}
+
+.document-link {
+    color: var(--accent-blue);
+    text-decoration: none;
+    padding: 0.3rem 0.4rem;
+    border-radius: 4px;
+    transition: all 0.2s;
+    font-size: 1rem;
+    display: inline-flex;
+    align-items: center;
+}
+.document-link:hover {
+    background: rgba(79, 70, 229, 0.1);
+    color: var(--accent-purple);
+}
+
+.btn-document-delete {
+    background: none;
+    border: none;
+    color: var(--accent-red);
+    cursor: pointer;
+    padding: 0.3rem 0.4rem;
+    border-radius: 4px;
+    transition: all 0.2s;
+    font-size: 0.8rem;
+    display: inline-flex;
+    align-items: center;
+    opacity: 0.6;
+}
+.btn-document-delete:hover {
+    opacity: 1;
+    background: rgba(239, 68, 68, 0.1);
+}
+
 .btn-installment-group-delete {
     background: transparent;
     border: 1px solid rgba(239, 68, 68, 0.3);

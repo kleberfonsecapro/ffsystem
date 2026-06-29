@@ -73,3 +73,19 @@ class Transaction(models.Model):
         if self.is_installment:
             label += f" ({self.installment_number}/{self.installment_total})"
         return label
+
+
+class TransactionDocument(models.Model):
+    transaction = models.ForeignKey(Transaction, on_delete=models.CASCADE, related_name="documents", verbose_name="transação")
+    file = models.FileField(upload_to="documents/%Y/%m/%d/", verbose_name="arquivo")
+    filename_original = models.CharField(max_length=255, verbose_name="nome original")
+    filesize = models.IntegerField(verbose_name="tamanho (bytes)")
+    uploaded_at = models.DateTimeField(auto_now_add=True, verbose_name="enviado em")
+
+    class Meta:
+        verbose_name = "documento"
+        verbose_name_plural = "documentos"
+        ordering = ["-uploaded_at"]
+
+    def __str__(self):
+        return self.filename_original

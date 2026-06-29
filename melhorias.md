@@ -405,73 +405,6 @@
 
 ---
 
-## ⏳ A Implementar
-
-### 9. Insight IA Real no Dashboard
-**Descrição:** Substituir a regra simples de comparação receita/despesa por uma chamada real à Groq para gerar análise financeira contextual.
-**Arquivos envolvidos:** `dashboard/views.py`, `dashboard/urls.py`
-**Observação:** Reaproveitar o cliente Groq já configurado em `intelligence/views.py`.
-
-### 10. Rate Limiting na API Groq
-**Descrição:** Limitar chamadas à API Groq por usuário para controlar custos.
-**Arquivos envolvidos:** `intelligence/views.py`
-**Observação:** README já lista como pendência.
-
-### 11. Password Reset (Esqueci Minha Senha)
-**Status:** ✅ **IMPLEMENTADO** (Junho 2026)
-
-**Descrição:** Fluxo completo de recuperação de senha por email usando as views built-in do Django (`django.contrib.auth.views`).
-
-**Arquivos alterados:**
-
-| Arquivo | Mudança |
-|---|---|
-| `core/settings.py` | Configuração de email (EMAIL_BACKEND, EMAIL_HOST, EMAIL_PORT, EMAIL_USE_TLS, EMAIL_HOST_USER, EMAIL_HOST_PASSWORD, DEFAULT_FROM_EMAIL, PASSWORD_RESET_TIMEOUT) |
-| `users/urls.py` | 4 rotas de password reset usando `auth_views`: `password_reset`, `password_reset_done`, `password_reset_confirm`, `password_reset_complete` |
-| `templates/login.html` | Link "Esqueci minha senha" apontando para `users:password_reset` |
-| `templates/registration/password_reset_form.html` | Template para solicitar reset (email) |
-| `templates/registration/password_reset_done.html` | Template de confirmação de envio |
-| `templates/registration/password_reset_confirm.html` | Template para definir nova senha (token) |
-| `templates/registration/password_reset_complete.html` | Template de sucesso |
-| `.env.example` | Variáveis de email documentadas |
-
-**Detalhes técnicos:**
-- Usa `PasswordResetView`, `PasswordResetDoneView`, `PasswordResetConfirmView`, `PasswordResetCompleteView` do `django.contrib.auth.views`
-- Token gerado por `django.contrib.auth.tokens.default_token_generator` (HMAC com timestamp, válido por 1h - `PASSWORD_RESET_TIMEOUT = 3600`)
-- Email enviado via `django.core.mail.send_mail` com template HTML simples
-- Em desenvolvimento, usa `console.EmailBackend` (exibe email no console/logs)
-- Em produção, configurar SMTP via variáveis de ambiente (`EMAIL_HOST`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, etc.)
-- Link no login: "Esqueci minha senha" → `/users/password-reset/`
-
----
-
-### 12. Testes Unitários e de Integração
-**Descrição:** Cobrir models, views e a integração com Groq com testes.
-**Arquivos envolvidos:** `finance/tests.py`, `intelligence/tests.py`, `dashboard/tests.py`, `users/tests.py`
-**Observação:** README lista cobertura atual em 0%.
-
-### 13. Bundle Local do Chart.js
-**Descrição:** Substituir CDN do Chart.js por bundle local (elimina dependência externa).
-**Arquivos envolvidos:** `templates/base.html`, `static/js/`
-**Observação:** README já lista como pendência.
-
-### 14. Migrar psycopg2-binary para psycopg2
-**Descrição:** Substituir `psycopg2-binary` por `psycopg2` em produção (boas práticas).
-**Arquivos envolvidos:** `requirements.txt`, `Dockerfile`
-**Observação:** README já lista como pendência.
-
-### 18. Botão IA Flutuante na Gestão Financeira
-**Descrição:** Adicionar um botão "IA" ao lado de "Nova Transação" na página de gestão financeira. Ao clicar, abre um chat flutuante (modal/overlay) para conversar com o assistente IA, sem ocupar espaço fixo na tela.
-**Arquivos envolvidos:** `templates/finance_list.html`, `static/css/style.css`, `static/js/chat.js`
-**Observação:** O chat fixo foi removido na melhoria #17; esta é a substituição planejada.
-
-### 19. Histórico de Conversas com IA no Banco
-**Descrição:** Criar model `ConversationHistory` para armazenar as conversas do usuário com a IA (mensagens e respostas compactadas). Manter por 7 dias, com deleção automática via cron/management command. A IA poderá recuperar o histórico quando o usuário pedir para "relembrar toda a conversa".
-**Arquivos envolvidos:** `intelligence/models.py`, `intelligence/management/commands/`, `core/settings.py`
-**Observação:** Compactar mensagens antes de salvar (ex: zlib/gzip no campo TextField/ BinaryField). O comando de limpeza pode rodar via cron no docker ou como task periódica.
-
----
-
 ### 11. Password Reset (Esqueci Minha Senha)
 
 **Data:** Junho 2026
@@ -513,6 +446,149 @@ EMAIL_HOST_PASSWORD=sua-senha-de-app
 DEFAULT_FROM_EMAIL=SmartFinance AI <noreply@smartfinance.ai>
 ```
 Sem configuração de SMTP, usa `console.EmailBackend` (imprime no log do container).
+
+---
+
+## ⏳ A Implementar
+
+### 9. Insight IA Real no Dashboard
+**Descrição:** Substituir a regra simples de comparação receita/despesa por uma chamada real à Groq para gerar análise financeira contextual.
+**Arquivos envolvidos:** `dashboard/views.py`, `dashboard/urls.py`
+**Observação:** Reaproveitar o cliente Groq já configurado em `intelligence/views.py`.
+
+### 10. Rate Limiting na API Groq
+**Descrição:** Limitar chamadas à API Groq por usuário para controlar custos.
+**Arquivos envolvidos:** `intelligence/views.py`
+**Observação:** README já lista como pendência.
+
+### 12. Testes Unitários e de Integração
+**Descrição:** Cobrir models, views e a integração com Groq com testes.
+**Arquivos envolvidos:** `finance/tests.py`, `intelligence/tests.py`, `dashboard/tests.py`, `users/tests.py`
+**Observação:** README lista cobertura atual em 0%.
+
+### 13. Bundle Local do Chart.js
+**Descrição:** Substituir CDN do Chart.js por bundle local (elimina dependência externa).
+**Arquivos envolvidos:** `templates/base.html`, `static/js/`
+**Observação:** README já lista como pendência.
+
+### 14. Migrar psycopg2-binary para psycopg2
+**Descrição:** Substituir `psycopg2-binary` por `psycopg2` em produção (boas práticas).
+**Arquivos envolvidos:** `requirements.txt`, `Dockerfile`
+**Observação:** README já lista como pendência.
+
+### 18. Botão IA Flutuante na Gestão Financeira
+**Descrição:** Adicionar um botão "IA" ao lado de "Nova Transação" na página de gestão financeira. Ao clicar, abre um chat flutuante (modal/overlay) para conversar com o assistente IA, sem ocupar espaço fixo na tela.
+**Arquivos envolvidos:** `templates/finance_list.html`, `static/css/style.css`, `static/js/chat.js`
+**Observação:** O chat fixo foi removido na melhoria #17; esta é a substituição planejada.
+
+### 19. Histórico de Conversas com IA no Banco
+**Descrição:** Criar model `ConversationHistory` para armazenar as conversas do usuário com a IA (mensagens e respostas compactadas). Manter por 7 dias, com deleção automática via cron/management command. A IA poderá recuperar o histórico quando o usuário pedir para "relembrar toda a conversa".
+**Arquivos envolvidos:** `intelligence/models.py`, `intelligence/management/commands/`, `core/settings.py`
+**Observação:** Compactar mensagens antes de salvar (ex: zlib/gzip no campo TextField/ BinaryField). O comando de limpeza pode rodar via cron no docker ou como task periódica.
+
+---
+
+### 43. Upload de Documentos por Despesa (Comprovantes) + Captura via Câmera
+
+**Data:** Junho 2026
+
+**Descrição:** Permitir que o usuário selecione uma despesa existente na listagem (usando os filtros já implementados — mês, tipo, categoria) e anexe um ou mais documentos/comprovantes digitais (PDF, JPEG, PNG). O documento fica armazenado no servidor e atrelado permanentemente à despesa selecionada, podendo ser visualizado, baixado ou removido posteriormente. Adicionada opção "Tirar foto" que abre a câmera do dispositivo (mobile/desktop) para capturar o comprovante diretamente.
+
+**Arquivos alterados:**
+
+| Arquivo | Mudança |
+|---|---|
+| `finance/models.py` | Novo model `TransactionDocument` (FileField, FK Transaction, uploaded_at, filename_original, filesize) |
+| `finance/migrations/0006_transactiondocument.py` | Migration para criar o model TransactionDocument |
+| `core/settings.py` | Adicionar `MEDIA_ROOT` e `MEDIA_URL` |
+| `core/urls.py` | Adicionar `+ static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)` em dev |
+| `finance/forms.py` | Novo `TransactionDocumentForm` (FileField, valida extensão .pdf/.jpg/.png, max 10MB) |
+| `finance/views.py` | View `finance_upload_document` (POST, salva arquivo e cria TransactionDocument); view `finance_delete_document` (POST, deleta arquivo + registro) |
+| `finance/urls.py` | Rotas `<int:pk>/upload-doc/` e `<int:pk>/delete-doc/<int:doc_id>/` |
+| `templates/finance_list.html` | Nova coluna "Comprovante" com ícone 📎 "Anexar" (sem doc) ou 📄 nome do arquivo + 🗑️ excluir (com doc); Modal de upload com **dois botões**: "Selecionar arquivo" e "Tirar foto" (abre câmera via `capture="environment"`) |
+| `static/css/style.css` | Classes `.btn-document`, `.document-link`, `.btn-document-delete` |
+
+**Detalhes técnicos:**
+
+**1. Model `TransactionDocument`:**
+- `transaction` = FK para `Transaction` (`on_delete=CASCADE`, `related_name="documents"`)
+- `file` = `FileField(upload_to="documents/%Y/%m/%d/")`
+- `filename_original` = `CharField(max_length=255)` — nome original do arquivo
+- `filesize` = `IntegerField()` — tamanho em bytes
+- `uploaded_at` = `DateTimeField(auto_now_add=True)`
+- `__str__` = retorna `filename_original`
+- `related_name="documents"` permite acesso via `transaction.documents.all()`
+
+**2. Upload (`finance_upload_document`):**
+- Decorator `@login_required` + `@require_POST`
+- `get_object_or_404(Transaction, pk=pk, user=request.user)` — segurança
+- Form valida extensão (.pdf, .jpg, .png) e tamanho (10MB)
+- Salva arquivo em `media/documents/<user_id>/<ano>/<mes>/<dia>/<uuid>.<ext>`
+- Cria `TransactionDocument` apontando para a transação
+- Mensagem de sucesso com `messages.success`
+- Redireciona para `finance:list` mantendo filtros ativos
+
+**3. Deleção (`finance_delete_document`):**
+- Decorator `@login_required` + `@require_POST`
+- `get_object_or_404(TransactionDocument, pk=doc_id, transaction__pk=pk, transaction__user=request.user)`
+- Deleta o arquivo físico do disco
+- Deleta o registro do banco
+- Mensagem de sucesso
+- Redireciona para `finance:list` mantendo filtros
+
+**4. Exibição na listagem:**
+- Na coluna "Comprovante" de cada linha:
+  - **Sem documento:** botão "Anexar" (📎, `btn-document`) → abre modal de upload
+  - **Com documento:** link para o arquivo (📄, abre em nova aba) + nome truncado + botão "Excluir" (🗑️, vermelho, com confirmação JS)
+- Modal de upload com:
+  - Dois botões: **"Selecionar arquivo"** (abre seletor PDF/JPG/PNG) e **"Tirar foto"** (abre câmera via `accept="image/*"` + `capture="environment"`)
+  - Preview do nome do arquivo selecionado/capturado
+  - Botão "Enviar" (POST para `finance:upload_document`) — habilitado apenas após escolha
+  - Validação client-side de extensão e tamanho
+
+**5. Captura via câmera:**
+- Botão "Tirar foto" define `input.accept = "image/*"` e `input.capture = "environment"`
+- **Mobile (iOS/Android):** abre câmera nativa traseira, permite tirar foto e usar
+- **Desktop:** abre seletor filtrando apenas imagens
+
+**6. Segurança:**
+- `@login_required` em todas as views de documento
+- `get_object_or_404` com `transaction__user=request.user` em todas as operações
+- CSRF token em todos os formulários
+- Validação dupla: client-side (JS) + server-side (form)
+- Extensões restritas: `.pdf`, `.jpg`, `.jpeg`, `.png`
+- Tamanho máximo: 10MB (configurável)
+- Confirmação JS antes de excluir documento
+
+**7. Configuração necessária (`settings.py`):**
+```python
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+```
+
+---
+
+**7. Servir arquivos em desenvolvimento (`core/urls.py`):**
+```python
+from django.conf import settings
+from django.conf.urls.static import static
+
+urlpatterns = [...] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+```
+
+**8. Impacto UX:**
+- Usuário filtra despesas por mês/tipo/categoria → vê a despesa desejada
+- Clica em "Anexar" na linha correspondente → seleciona o arquivo → upload
+- Documento aparece como link clicável na mesma linha
+- Pode excluir e substituir o documento a qualquer momento
+- Se a despesa for excluída, o documento é automaticamente removido (CASCADE)
+
+**9. Considerações futuras:**
+- Permitir múltiplos documentos por despesa (já suportado pelo model separado)
+- Filtro "Com comprovante" / "Sem comprovante" na listagem
+- Preview de imagem inline (thumbnail)
+- OCR do documento para preenchimento automático de campos
+- Upload em lote (vários documentos para várias despesas de uma vez)
 
 ---
 

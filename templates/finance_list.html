@@ -117,6 +117,7 @@
                             <th style="width: 80px;">Parcela</th>
                             <th>Data</th>
                             <th>Valor</th>
+                            <th style="width: 60px;">Doc</th>
                             <th style="width: 80px;">Status</th>
                             <th style="width: 100px;">Ações</th>
                         </tr>
@@ -127,6 +128,25 @@
                             <td style="text-align: center; font-weight: 600; color: var(--accent-purple);">{{ tx.installment_number }}/{{ tx.installment_total }}</td>
                             <td>{{ tx.date|date:"d M Y" }}</td>
                             <td class="text-red" style="font-weight: 600;">R$ {{ tx.amount|floatformat:2 }}</td>
+                            <td style="text-align: center;">
+                                {% with doc=tx.documents.first %}
+                                    {% if doc %}
+                                        <a href="{{ doc.file.url }}" class="document-link" target="_blank" title="{{ doc.filename_original }}">
+                                            <i class="fa-solid fa-file-lines"></i>
+                                        </a>
+                                        <form method="POST" action="{% url 'finance:delete_document' tx.pk doc.pk %}" style="display: inline;" onsubmit="return confirm('Remover comprovante \"{{ doc.filename_original }}\"?')">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn-document-delete" title="Remover comprovante">
+                                                <i class="fa-solid fa-trash-can"></i>
+                                            </button>
+                                        </form>
+                                    {% else %}
+                                        <button type="button" class="btn-document" onclick="openUploadModal({{ tx.pk }}, '{{ tx.description|escapejs }}')" title="Anexar comprovante">
+                                            <i class="fa-solid fa-paperclip"></i>
+                                        </button>
+                                    {% endif %}
+                                {% endwith %}
+                            </td>
                             <td>
                                 {% if tx.paid %}
                                     <span class="badge badge-paid">Paga</span>
@@ -180,6 +200,7 @@
                         <th>Categoria</th>
                         <th>Tipo</th>
                         <th>Valor</th>
+                        <th style="width: 80px;">Comprovante</th>
                         <th>Ações</th>
                     </tr>
                 </thead>
@@ -204,6 +225,25 @@
                         </td>
                         <td class="{% if tx.type == 'receita' %}text-green{% else %}text-red{% endif %}" style="font-weight: 600;">
                             R$ {{ tx.amount|floatformat:2 }}
+                        </td>
+                        <td style="text-align: center;">
+                            {% with doc=tx.documents.first %}
+                                {% if doc %}
+                                    <a href="{{ doc.file.url }}" class="document-link" target="_blank" title="{{ doc.filename_original }}">
+                                        <i class="fa-solid fa-file-lines"></i>
+                                    </a>
+                                    <form method="POST" action="{% url 'finance:delete_document' tx.pk doc.pk %}" style="display: inline;" onsubmit="return confirm('Remover comprovante \"{{ doc.filename_original }}\"?')">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn-document-delete" title="Remover comprovante">
+                                            <i class="fa-solid fa-trash-can"></i>
+                                        </button>
+                                    </form>
+                                {% else %}
+                                    <button type="button" class="btn-document" onclick="openUploadModal({{ tx.pk }}, '{{ tx.description|escapejs }}')" title="Anexar comprovante">
+                                        <i class="fa-solid fa-paperclip"></i>
+                                    </button>
+                                {% endif %}
+                            {% endwith %}
                         </td>
                         <td>
                             <div style="display: flex; gap: 0.5rem; align-items: center; justify-content: center;">
@@ -264,7 +304,55 @@
     </div>
 </div>
 
+<div id="upload-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h3>Anexar Comprovante</h3>
+            <button type="button" class="modal-close" id="close-upload-modal">&times;</button>
+        </div>
+        <form method="POST" action="" enctype="multipart/form-data" id="upload-form">
+            {% csrf_token %}
+            <input type="file" name="file" id="doc-file" accept=".pdf,.jpg,.jpeg,.png" style="display: none;" required>
+            <div class="form-group" style="text-align: center;">
+                <label style="display: block; margin-bottom: 0.75rem; color: var(--text-secondary); font-size: 0.875rem;">Selecione o comprovante</label>
+                <div style="display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap;">
+                    <button type="button" class="btn-secondary" id="btn-select-file" style="flex: 1; min-width: 140px; justify-content: center; padding: 0.8rem 1rem;">
+                        <i class="fa-solid fa-folder-open"></i> Selecionar arquivo
+                    </button>
+                    <button type="button" class="btn-secondary" id="btn-take-photo" style="flex: 1; min-width: 140px; justify-content: center; padding: 0.8rem 1rem;">
+                        <i class="fa-solid fa-camera"></i> Tirar foto
+                    </button>
+                </div>
+            </div>
+            <div id="doc-preview" style="display: none; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem; padding: 0.5rem; background: var(--bg-main); border-radius: 6px;">
+                <i class="fa-solid fa-file"></i> <span id="doc-filename"></span>
+            </div>
+            <div style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 1rem;">
+                <p>Formatos aceitos: <strong>PDF, JPEG, PNG</strong></p>
+                <p>Tamanho máximo: <strong>10 MB</strong></p>
+            </div>
+            <button type="submit" class="btn-primary" id="btn-submit-doc" disabled style="width: 100%; justify-content: center; opacity: 0.5;">Enviar</button>
+        </form>
+    </div>
+</div>
+
 <script>
+    var currentUploadTxId = null;
+
+    function openUploadModal(txId, txDesc) {
+        currentUploadTxId = txId;
+        var modal = document.getElementById('upload-modal');
+        var form = document.getElementById('upload-form');
+        var fileInput = document.getElementById('doc-file');
+        form.action = '/finance/' + txId + '/upload-doc/';
+        document.querySelector('#upload-modal .modal-header h3').textContent = 'Anexar Comprovante - ' + txDesc;
+        fileInput.value = '';
+        document.getElementById('doc-preview').style.display = 'none';
+        document.getElementById('btn-submit-doc').disabled = true;
+        document.getElementById('btn-submit-doc').style.opacity = '0.5';
+        modal.style.display = 'flex';
+    }
+
     document.addEventListener('DOMContentLoaded', function() {
         var openImportBtn = document.getElementById('open-import-modal');
         var importModal = document.getElementById('import-modal');
@@ -280,6 +368,57 @@
             window.addEventListener('click', function(e) {
                 if (e.target == importModal) {
                     importModal.style.display = 'none';
+                }
+            });
+        }
+
+        var uploadModal = document.getElementById('upload-modal');
+        var closeUploadBtn = document.getElementById('close-upload-modal');
+        var docFileInput = document.getElementById('doc-file');
+        var docPreview = document.getElementById('doc-preview');
+        var docFilename = document.getElementById('doc-filename');
+        var btnSelectFile = document.getElementById('btn-select-file');
+        var btnTakePhoto = document.getElementById('btn-take-photo');
+        var btnSubmitDoc = document.getElementById('btn-submit-doc');
+
+        if (closeUploadBtn && uploadModal) {
+            closeUploadBtn.addEventListener('click', function() {
+                uploadModal.style.display = 'none';
+            });
+            window.addEventListener('click', function(e) {
+                if (e.target == uploadModal) {
+                    uploadModal.style.display = 'none';
+                }
+            });
+        }
+
+        if (btnSelectFile && docFileInput) {
+            btnSelectFile.addEventListener('click', function() {
+                docFileInput.accept = '.pdf,.jpg,.jpeg,.png';
+                docFileInput.removeAttribute('capture');
+                docFileInput.click();
+            });
+        }
+
+        if (btnTakePhoto && docFileInput) {
+            btnTakePhoto.addEventListener('click', function() {
+                docFileInput.accept = 'image/*';
+                docFileInput.setAttribute('capture', 'environment');
+                docFileInput.click();
+            });
+        }
+
+        if (docFileInput && docPreview && docFilename && btnSubmitDoc) {
+            docFileInput.addEventListener('change', function() {
+                if (this.files && this.files[0]) {
+                    docFilename.textContent = this.files[0].name;
+                    docPreview.style.display = 'block';
+                    btnSubmitDoc.disabled = false;
+                    btnSubmitDoc.style.opacity = '1';
+                } else {
+                    docPreview.style.display = 'none';
+                    btnSubmitDoc.disabled = true;
+                    btnSubmitDoc.style.opacity = '0.5';
                 }
             });
         }
