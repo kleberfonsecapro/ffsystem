@@ -229,7 +229,7 @@
                         <td style="text-align: center;">
                             {% with doc=tx.documents.first %}
                                 {% if doc %}
-                                    <a href="{{ doc.file.url }}" class="document-link" target="_blank" title="{{ doc.filename_original }}">
+                                    <a href="{% url 'finance:download_document' tx.pk doc.pk %}" class="document-link" title="{{ doc.filename_original }}">
                                         <i class="fa-solid fa-file-lines"></i>
                                     </a>
                                     <form method="POST" action="{% url 'finance:delete_document' tx.pk doc.pk %}" style="display: inline;" onsubmit="return confirm('Remover comprovante \"{{ doc.filename_original }}\"?')">

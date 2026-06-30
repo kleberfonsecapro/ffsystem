@@ -8,7 +8,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.http import FileResponse, HttpResponse
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_http_methods, require_POST
 from django.db.models import Sum
 from django.db.models.functions import TruncMonth
 from django.template.loader import render_to_string
@@ -424,6 +424,7 @@ def finance_upload_document(request, pk):
 
 
 @login_required(login_url="/users/login/")
+@require_http_methods(["GET", "HEAD"])
 def finance_download_document(request, pk, doc_id):
     doc = get_object_or_404(TransactionDocument, pk=doc_id, transaction__pk=pk, transaction__user=request.user)
     response = FileResponse(doc.file.open("rb"), as_attachment=True, filename=doc.filename_original)
