@@ -24,6 +24,7 @@ services:
       - "8000"
     volumes:
       - static_volume:/app/staticfiles
+      - media_volume:/app/media
     environment:
       - SECRET_KEY=${SECRET_KEY:?error}
       - DEBUG=${DEBUG:-False}
@@ -55,6 +56,7 @@ services:
 volumes:
   postgres_data:
   static_volume:
+  media_volume:
 
 networks:
   internal:
