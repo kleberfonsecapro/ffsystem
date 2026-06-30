@@ -5,7 +5,7 @@ from datetime import datetime
 import json
 from decimal import Decimal, InvalidOperation
 from django.shortcuts import render, redirect, get_object_or_404
-from django.http import HttpResponse
+from django.http import FileResponse, HttpResponse
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
@@ -421,6 +421,13 @@ def finance_upload_document(request, pk):
             for error in errors:
                 messages.error(request, error)
     return redirect("finance:list")
+
+
+@login_required(login_url="/users/login/")
+def finance_download_document(request, pk, doc_id):
+    doc = get_object_or_404(TransactionDocument, pk=doc_id, transaction__pk=pk, transaction__user=request.user)
+    response = FileResponse(doc.file.open("rb"), as_attachment=True, filename=doc.filename_original)
+    return response
 
 
 @login_required(login_url="/users/login/")
