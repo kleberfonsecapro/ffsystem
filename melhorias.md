@@ -474,17 +474,59 @@ Sem configuração de SMTP, usa `console.EmailBackend` (imprime no log do contai
 
 ---
 
-## ⏳ A Implementar
-
 ### 9. Insight IA Real no Dashboard
-**Descrição:** Substituir a regra simples de comparação receita/despesa por uma chamada real à Groq para gerar análise financeira contextual.
-**Arquivos envolvidos:** `dashboard/views.py`, `dashboard/urls.py`
-**Observação:** Reaproveitar o cliente Groq já configurado em `intelligence/views.py`.
+
+**Data:** Julho 2026
+
+**Descrição:** Substituída a regra simples de comparação receita/despesa no dashboard por uma chamada real à Groq para gerar análise financeira contextual personalizada.
+
+**Arquivos alterados:**
+
+| Arquivo | Mudança |
+|---|---|
+| `intelligence/groq_client.py` | **(novo)** Função `get_groq_client()` — centraliza criação do cliente Groq (DRY) |
+| `intelligence/insight.py` | **(novo)** `generate_insight(user)` — coleta dados financeiros, monta prompt estruturado com receitas/despesas/categorias/comparação mensal, chama Groq, fallback rule-based |
+| `dashboard/views.py` | `insight_api` agora chama `generate_insight(request.user)` em vez da regra simples |
+| `intelligence/views.py` | Refatorado para usar `get_groq_client()` — remove `import os` e `Groq()` direto |
+
+**Detalhes técnicos:**
+- Cliente Groq centralizado em `get_groq_client()` — trata `GROQ_API_KEY` ausente com `None`, log aviso
+- `generate_insight()` envia à IA: totais do mês (receita/despesa/saldo), top 5 categorias por tipo, comparação com mês anterior, e regras de estilo (português, direto, dica prática)
+- Se Groq falha (timeout, erro, API key ausente), fallback rule-based mais rico que o original: classifica em 4 cenários (sem despesas, déficit, margem apertada >80%, saudável)
+- Template `dashboard.html` inalterado — o JS já faz `fetch("/dashboard/api/insight/")` e exibe no card "Insight da IA"
+- Bug fix adicional: `result.get("date", today)` → `result.get("date") or today` em `intelligence/views.py` (trata `""` vindo da IA)
+
+---
 
 ### 10. Rate Limiting na API Groq
-**Descrição:** Limitar chamadas à API Groq por usuário para controlar custos.
-**Arquivos envolvidos:** `intelligence/views.py`
-**Observação:** README já lista como pendência.
+
+**Data:** Julho 2026
+
+**Descrição:** Implementado controle de taxa (rate limiting) nas chamadas à API Groq por usuário para controlar custos e evitar abuso.
+
+**Arquivos alterados:**
+
+| Arquivo | Mudança |
+|---|---|---|
+| `intelligence/rate_limiter.py` | **(novo)** Função `check_groq_rate_limit(user_id, limit, window, scope)` usando DatabaseCache do Django |
+| `core/settings.py` | Adicionado `CACHES` com `DatabaseCache` (tabela `cache_table_groq`) — compartilhado entre workers |
+| `entrypoint.sh` | `createcachetable cache_table_groq` executado no startup |
+| `intelligence/views.py` | `chat_api` checa rate limit (20/min, scope="chat") antes de chamar a Groq; retorna 429 se excedido |
+| `intelligence/insight.py` | `generate_insight` checa rate limit (6/min, scope="insight") antes de chamar a Groq; cai em fallback se excedido |
+
+**Detalhes técnicos:**
+- Cache: Django `DatabaseCache` (tabela PostgreSQL `cache_table_groq`) — compartilhado entre todos os workers do Gunicorn (diferente de `LocMemCache` que é por processo)
+- Chave: `groq_rate_limit:{scope}:{user_id}` com TTL = `window` segundos
+- `scope` separa contadores por funcionalidade: `chat` (20/min) e `insight` (6/min) não competem
+- Chat API: limite de **20 requisições por minuto** por usuário — resposta `{"reply": "..."}` + HTTP 429
+- Dashboard Insight: limite de **6 requisições por minuto** por usuário — fallback rule-based silencioso
+- Log de warning no servidor quando o limite é excedido
+- Race condition aceitável (no máximo 1 requisição extra por race)
+- `createcachetable` no entrypoint garante criação da tabela no deploy
+
+---
+
+## ⏳ A Implementar
 
 ### 12. Testes Unitários e de Integração
 **Descrição:** Cobrir models, views e a integração com Groq com testes.

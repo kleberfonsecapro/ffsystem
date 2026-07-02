@@ -11,6 +11,7 @@ cleanup() {
 trap cleanup SIGTERM SIGINT
 
 python manage.py migrate --noinput
+python manage.py createcachetable --database default cache_table_groq 2>/dev/null || true
 
 if [ -n "$DJANGO_SUPERUSER_USERNAME" ] && [ -n "$DJANGO_SUPERUSER_PASSWORD" ]; then
   python manage.py shell -c "

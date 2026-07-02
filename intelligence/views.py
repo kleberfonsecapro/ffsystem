@@ -1,4 +1,3 @@
-import os
 import json
 import logging
 from datetime import datetime, date
@@ -7,8 +6,9 @@ from django.shortcuts import render
 from django.contrib.auth.decorators import login_required
 from django.http import JsonResponse
 from django.views.decorators.http import require_POST
-from groq import Groq
 from finance.models import Transaction
+from .groq_client import get_groq_client
+from .rate_limiter import check_groq_rate_limit
 from finance.categories import resolve_category, default_category_names
 
 logger = logging.getLogger(__name__)
@@ -33,9 +33,14 @@ def chat_api(request):
     if not user_message:
         return JsonResponse({"error": "Mensagem vazia"}, status=400)
 
-    api_key = os.environ.get("GROQ_API_KEY")
-    if not api_key:
-        logger.warning("Tentativa de uso do chat IA sem GROQ_API_KEY configurada")
+    if not check_groq_rate_limit(request.user.pk, limit=20, window=60, scope="chat"):
+        return JsonResponse(
+            {"reply": "Limite de requisições ao assistente atingido. Aguarde um minuto."},
+            status=429,
+        )
+
+    client = get_groq_client()
+    if not client:
         return JsonResponse({"reply": "Assistente IA não configurado. Contate o administrador."})
 
     today = date.today().isoformat()
@@ -53,7 +58,6 @@ IMPORTANTE: Apenas retorne JSON válido. Não invente dados.
 """
 
     try:
-        client = Groq(api_key=api_key)
 
         response = client.chat.completions.create(
             messages=[
@@ -90,7 +94,7 @@ IMPORTANTE: Apenas retorne JSON válido. Não invente dados.
             if len(description) > 255:
                 description = description[:255]
 
-            tx_date = result.get("date", today)
+            tx_date = result.get("date") or today
 
             if errors:
                 logger.warning("LLM retornou dados inválidos: %s | raw: %s", errors, raw)

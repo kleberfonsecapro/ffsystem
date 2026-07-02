@@ -19,6 +19,7 @@ from django.http import JsonResponse
 from finance.models import Transaction
 from django.db.models import Sum
 from django.db.models.functions import TruncMonth
+from intelligence.insight import generate_insight
 
 @login_required(login_url="/users/login/")
 def home(request):
@@ -79,24 +80,7 @@ def home(request):
 
 @login_required(login_url="/users/login/")
 def insight_api(request):
-    transactions = Transaction.objects.filter(user=request.user)
-    today = date.today()
-
-    if not transactions.exists():
-        return JsonResponse({"insight": "Registre algumas transações para análise."})
-
-    month_start = today.replace(day=1)
-    month_income = transactions.filter(type="receita", date__gte=month_start, date__lte=today).aggregate(Sum("amount"))["amount__sum"] or 0
-    month_expense = transactions.filter(type="despesa", date__gte=month_start, date__lte=today).aggregate(Sum("amount"))["amount__sum"] or 0
-
-    if month_expense > month_income:
-        insight = "Atenção: Suas despesas > receitas do mês!"
-    elif month_expense > 0:
-        pct = (month_expense / month_income) * 100 if month_income > 0 else 100
-        insight = f"Você gastou {pct:.1f}% das receitas do mês."
-    else:
-        insight = "Sem despesas registradas este mês!"
-
+    insight = generate_insight(request.user)
     return JsonResponse({"insight": insight})
 
 
