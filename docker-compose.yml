@@ -20,8 +20,8 @@ services:
     build: .
     container_name: ffsystem_web
     restart: unless-stopped
-    expose:
-      - "8000"
+    ports:
+      - "8000:8000"
     volumes:
       - static_volume:/app/staticfiles
       - media_volume:/app/media
@@ -51,7 +51,6 @@ services:
       start_period: 40s
     networks:
       - internal
-      - traefik_global
 
 volumes:
   postgres_data:
@@ -61,6 +60,3 @@ volumes:
 networks:
   internal:
     driver: bridge
-  traefik_global:
-    external: true
-    name: traefik_global

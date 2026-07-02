@@ -333,13 +333,13 @@ def finance_add(request):
                     )
 
                 messages.success(request, f"Compra parcelada em {total}x registrada!")
-                return redirect("dashboard:home")
+                return redirect("finance:list")
             else:
                 transaction = form.save(commit=False)
                 transaction.user = request.user
                 transaction.save()
                 messages.success(request, "Transação registrada com sucesso!")
-                return redirect("dashboard:home")
+                return redirect("finance:list")
         else:
             messages.error(request, "Erro nos dados informados. Verifique e tente novamente.")
     else:

@@ -13,9 +13,24 @@ trap cleanup SIGTERM SIGINT
 python manage.py migrate --noinput
 
 if [ -n "$DJANGO_SUPERUSER_USERNAME" ] && [ -n "$DJANGO_SUPERUSER_PASSWORD" ]; then
-  python manage.py createsuperuser --noinput \
-    --username "$DJANGO_SUPERUSER_USERNAME" \
-    --email "${DJANGO_SUPERUSER_EMAIL:-admin@example.com}" 2>&1 || true
+  python manage.py shell -c "
+import os
+from django.contrib.auth.models import User
+
+username = os.environ.get('DJANGO_SUPERUSER_USERNAME', 'admin')
+email = os.environ.get('DJANGO_SUPERUSER_EMAIL', 'admin@example.com')
+password = os.environ.get('DJANGO_SUPERUSER_PASSWORD', '')
+
+try:
+    user = User.objects.get(username=username)
+    user.set_password(password)
+    user.email = email
+    user.save()
+    print(f'Superuser \"{username}\" atualizado.')
+except User.DoesNotExist:
+    User.objects.create_superuser(username, email, password)
+    print(f'Superuser \"{username}\" criado.')
+" 2>&1 || true
 fi
 
 WORKERS=${GUNICORN_WORKERS:-$(nproc 2>/dev/null || echo 1)}
