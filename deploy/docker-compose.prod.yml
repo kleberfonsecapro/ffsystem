@@ -2,3 +2,12 @@ services:
   web:
     image: ghcr.io/kleberfonsecapro/ffsystem:${TAG:-latest}
     pull_policy: always
+    ports: []
+    networks:
+      - internal
+      - traefik_global
+
+networks:
+  traefik_global:
+    external: true
+    name: traefik_global

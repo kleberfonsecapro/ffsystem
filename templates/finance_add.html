@@ -21,7 +21,7 @@
     {% endif %}
     {% if messages %}
         {% for message in messages %}
-            <div style="color: var(--accent-green); margin-bottom: 1rem; padding: 0.75rem; background: rgba(16,185,129,0.1); border-radius: 6px;">
+            <div class="notification {% if message.tags == 'success' %}notification-success{% else %}notification-error{% endif %}">
                 {{ message }}
             </div>
         {% endfor %}

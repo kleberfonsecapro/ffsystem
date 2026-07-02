@@ -50,19 +50,22 @@ python:3.12-slim → instala dependências do sistema → pip install → collec
 
 #### `web` (Aplicação Django)
 - Build do Dockerfile local
-- Porta `8000:8000`
+- Porta `8000:8000` (exposta diretamente em lab/dev)
 - Volume: `static_volume:/app/staticfiles`
 - Variáveis obrigatórias: `SECRET_KEY`, `DB_PASSWORD`, `DJANGO_SUPERUSER_PASSWORD`
 - `depends_on`: aguarda `db` estar saudável (`condition: service_healthy`)
 - Healthcheck: `curl -sf http://localhost:8000` a cada 30s, 10s timeout, 3 retries, start period 40s
 - Restart: `unless-stopped`
+- **Em produção**: override via `deploy/docker-compose.prod.yml` remove `ports` e adiciona rede `traefik_global` + labels Traefik
 
 ### Redes
 
 | Rede | Driver | Tipo | Propósito |
 |---|---|---|---|
 | `internal` | bridge | interno | Comunicação entre `db` e `web` |
-| `traefik_global` | bridge | `external: true` | Tráfego HTTP/HTTPS do Traefik |
+| `traefik_global` | bridge | `external: true` | Tráfego HTTP/HTTPS do Traefik (apenas em produção) |
+
+> **Nota:** A rede `traefik_global` é adicionada apenas pelo override `deploy/docker-compose.prod.yml`. Em ambiente de lab/dev, o container `web` expõe a porta `8000` diretamente.
 
 ---
 
@@ -109,24 +112,29 @@ ffsystem:
 
 #### Como a aplicação se conecta
 
-O `docker-compose.yml` do ffsystem declara a rede `traefik_global` como externa e conecta o container `ffsystem_web` a ela. O container `db` fica apenas na rede `internal` (não exposto externamente).
+O `docker-compose.yml` base conecta o container `web` apenas à rede `internal`. Em produção, o override `deploy/docker-compose.prod.yml` adiciona a rede `traefik_global` e remove a exposição direta de porta.
 
 ```yaml
-networks:
+# docker-compose.yml (base - lab/dev)
+services:
   web:
     ...
+    ports:
+      - "8000:8000"
+    networks:
+      - internal
+
+# deploy/docker-compose.prod.yml (produção)
+services:
+  web:
+    image: ghcr.io/kleberfonsecapro/ffsystem:${TAG:-latest}
+    pull_policy: always
+    ports: []               # remove exposição direta
     networks:
       - internal
       - traefik_global
 
-  db:
-    ...
-    networks:
-      - internal
-
 networks:
-  internal:
-    driver: bridge
   traefik_global:
     external: true
     name: traefik_global
@@ -194,6 +202,7 @@ Sequência de inicialização:
 | `EMAIL_HOST_USER` | vazio | SMTP usuário |
 | `EMAIL_HOST_PASSWORD` | vazio | SMTP senha |
 | `DEFAULT_FROM_EMAIL` | `SmartFinance AI <noreply@smartfinance.ai>` | Remetente padrão |
+| `TRAEFIK_HOST` | `ffsystem.giize.com` | Domínio para roteamento Traefik (produção) |
 
 ---
 
@@ -215,7 +224,7 @@ Sequência de inicialização:
 - Admin `/admin/axes/` para desbloqueio manual
 
 ### Network
-- Container `web` exposto apenas na rede `traefik_global` (porta 8000 TCP)
+- Container `web` exposto na porta `8000` diretamente (lab/dev) ou via rede `traefik_global` (produção)
 - Container `db` isolado na rede `internal` — sem acesso externo
 - `depends_on` com `condition: service_healthy` evita race conditions
 
@@ -279,13 +288,25 @@ Acesso: `http://localhost:8000`
 cp .env.example .env
 # Preencher SECRET_KEY, DB_PASSWORD, DJANGO_SUPERUSER_PASSWORD, GROQ_API_KEY
 
-# 2. Subir containers com build
-docker compose up -d --build
+# 2. Fazer pull da imagem mais recente do GHCR
+TAG=latest docker compose \
+  -f docker-compose.yml \
+  -f deploy/docker-compose.prod.yml \
+  pull web
 
-# 3. Verificar logs
-docker compose logs -f web
+# 3. Subir containers (sem build local)
+docker compose \
+  -f docker-compose.yml \
+  -f deploy/docker-compose.prod.yml \
+  up -d --no-deps web --no-build
 
-# 4. Garantir que o Traefik está ativo
+# 4. Verificar logs
+docker compose \
+  -f docker-compose.yml \
+  -f deploy/docker-compose.prod.yml \
+  logs -f web
+
+# 5. Garantir que o Traefik está ativo
 docker ps | grep traefik_global
 ```
 
@@ -368,9 +389,12 @@ docker compose exec web python manage.py collectstatic --noinput
 ```
 
 ### Aplicação não responde pelo domínio
-Verificar se o container está na rede `traefik_global`:
+Verificar se o container está na rede `traefik_global` (produção):
 ```bash
-docker inspect ffsystem_web --format '{{range $net, $v := .NetworkSettings.Networks}}{{$net}} {{end}}'
+docker compose \
+  -f docker-compose.yml \
+  -f deploy/docker-compose.prod.yml \
+  inspect ffsystem_web --format '{{range $net, $v := .NetworkSettings.Networks}}{{$net}} {{end}}'
 # Deve conter: ffsystem_internal traefik_global
 ```
 
@@ -620,8 +644,14 @@ docker compose \
 ```bash
 # Verificar logs da Action no GitHub → Actions → workflow run
 # Ou SSH manual e verificar:
-docker compose -f docker-compose.yml -f deploy/docker-compose.prod.yml ps
-docker compose -f docker-compose.yml -f deploy/docker-compose.prod.yml logs web
+docker compose \
+  -f docker-compose.yml \
+  -f deploy/docker-compose.prod.yml \
+  ps
+docker compose \
+  -f docker-compose.yml \
+  -f deploy/docker-compose.prod.yml \
+  logs web
 ```
 
 **GHCR token expirou:**
